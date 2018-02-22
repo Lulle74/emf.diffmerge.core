@@ -14,6 +14,7 @@ Require-Bundle: org.eclipse.team.core,
  org.eclipse.emf.transaction,
  org.eclipse.emf.diffmerge.connector.core,
  org.eclipse.team.svn.core,
- org.eclipse.team.svn.ui
+ org.eclipse.team.svn.ui,
+ org.eclipse.ui.workbench
 Export-Package: org.eclipse.emf.diffmerge.connector.svn,
  org.eclipse.emf.diffmerge.connector.svn.ext
