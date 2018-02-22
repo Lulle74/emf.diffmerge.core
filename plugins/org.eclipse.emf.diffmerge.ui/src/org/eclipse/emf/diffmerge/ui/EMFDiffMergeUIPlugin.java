@@ -23,6 +23,9 @@ import java.util.Set;
 
 import org.eclipse.compare.CompareUI;
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Plugin;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.emf.common.util.Logger;
 import org.eclipse.emf.diffmerge.EMFDiffMergePlugin;
 import org.eclipse.emf.diffmerge.api.Role;
@@ -36,12 +39,13 @@ import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTError;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 
@@ -49,8 +53,10 @@ import org.osgi.framework.BundleContext;
  * The activator for this plug-in.
  * @author Olivier Constant
  */
-public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
+public class EMFDiffMergeUIPlugin extends Plugin {
   
+  private static BundleContext context;
+
   /** The default file extension for UI diff models */
   public static final String UI_DIFF_DATA_FILE_EXTENSION = DiffuidataPackage.eNAME;
   
@@ -97,8 +103,13 @@ public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
   private AdapterFactoryLabelProvider _composedAdapterFactoryLabelProvider;
   
   /** A map from a subset of image IDs to the corresponding shared image identifiers */
-  private final Map<ImageID, String> _sharedImageMap;
+  private Map<ImageID, String> _sharedImageMap;
   
+  /**
+   * The registry for all graphic images; <code>null</code> if not yet
+   * initialized.
+   */
+  private ImageRegistry imageRegistry = null;
   
   /**
 	 * Constructor
@@ -109,22 +120,28 @@ public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
 	  _ownershipFeature = createOwnershipFeature();
 	  _veryDarkGray = null;
 	  _composedAdapterFactoryLabelProvider = null;
-	  _sharedImageMap = createImageMap();
+    // _sharedImageMap = createImageMap();
 	}
 	
+
 	/**
 	 * Return a map from a subset of image IDs to the corresponding shared image identifiers
 	 * @return a non-null map
 	 */
 	protected Map<ImageID, String> createImageMap() {
 	  Map<ImageID, String> result = new HashMap<ImageID, String>();
-	  result.put(ImageID.DELETE, ISharedImages.IMG_TOOL_DELETE);
-    result.put(ImageID.LEFT, ISharedImages.IMG_TOOL_BACK);
-    result.put(ImageID.REDO, ISharedImages.IMG_TOOL_REDO);
-    result.put(ImageID.RIGHT, ISharedImages.IMG_TOOL_FORWARD);
-    result.put(ImageID.SHOW, ISharedImages.IMG_OBJS_INFO_TSK);
-    result.put(ImageID.UNDO, ISharedImages.IMG_TOOL_UNDO);
-    result.put(ImageID.WARNING, ISharedImages.IMG_OBJS_WARN_TSK);
+    // Can only be used in case of old 3.x platform
+    if (PlatformUI.isWorkbenchRunning()) {
+      result.put(ImageID.DELETE, ISharedImages.IMG_TOOL_DELETE);
+      result.put(ImageID.LEFT, ISharedImages.IMG_TOOL_BACK);
+      result.put(ImageID.REDO, ISharedImages.IMG_TOOL_REDO);
+      result.put(ImageID.RIGHT, ISharedImages.IMG_TOOL_FORWARD);
+      result.put(ImageID.SHOW, ISharedImages.IMG_OBJS_INFO_TSK);
+      result.put(ImageID.UNDO, ISharedImages.IMG_TOOL_UNDO);
+      result.put(ImageID.WARNING, ISharedImages.IMG_OBJS_WARN_TSK);
+    }
+    // else: see lookup using the _sharedImageMap: will "go local" instead if
+    // missing
     return result;
   }
 	
@@ -272,26 +289,58 @@ public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
    * @return a (normally) non-null image
    */
   public Image getImage(ImageID id_p) {
+    if (_sharedImageMap == null) {
+      _sharedImageMap = createImageMap();
+    }
     Image result;
     String sharedID = _sharedImageMap.get(id_p);
-    if (sharedID != null) {
-      result = PlatformUI.getWorkbench().getSharedImages().getImage(sharedID);
+    if (sharedID != null && PlatformUI.isWorkbenchRunning()) {
+        result = PlatformUI.getWorkbench().getSharedImages().getImage(sharedID);
     } else {
       result = getImageRegistry().get(id_p.name());
     }
     return result;
   }
   
+  public ImageRegistry getImageRegistry() {
+    if (imageRegistry == null) {
+      imageRegistry = createImageRegistry();
+      initializeImageRegistry(imageRegistry);
+    }
+    return imageRegistry;
+  }
+
+  private ImageRegistry createImageRegistry() {
+
+    // If we are in the UI Thread use that
+    if (Display.getCurrent() != null) {
+      return new ImageRegistry(Display.getCurrent());
+    }
+    // 3.x platform:
+    if (PlatformUI.isWorkbenchRunning()) {
+      return new ImageRegistry(PlatformUI.getWorkbench().getDisplay());
+    }
+
+    // Invalid thread access if it is not the UI Thread
+    // and the workbench is not created.
+    throw new SWTError(SWT.ERROR_THREAD_INVALID_ACCESS);
+  }
+
   /**
    * Return the image descriptor of the given ID
    * @param id_p a non-null image ID
    * @return a (normally) non-null image
    */
   public ImageDescriptor getImageDescriptor(ImageID id_p) {
+    if (_sharedImageMap == null) {
+      _sharedImageMap = createImageMap();
+    }
     ImageDescriptor result;
     String sharedID = _sharedImageMap.get(id_p);
-    if (sharedID != null) {
-      result = PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(sharedID);
+    if (sharedID != null && PlatformUI.isWorkbenchRunning()) {
+      result = PlatformUI.getWorkbench().getSharedImages()
+          .getImageDescriptor(sharedID);
+
     } else {
       result = getImageRegistry().getDescriptor(id_p.name());
     }
@@ -311,7 +360,7 @@ public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
    * @return a non-null String
    */
   public String getPluginId() {
-    return getBundle().getSymbolicName();
+    return context.getBundle().getSymbolicName();
   }
   
   /**
@@ -332,12 +381,7 @@ public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
     return _veryDarkGray;
   }
   
-  /**
-   * @see org.eclipse.ui.plugin.AbstractUIPlugin#initializeImageRegistry(org.eclipse.jface.resource.ImageRegistry)
-   */
-  @Override
-  protected void initializeImageRegistry(ImageRegistry reg_p) {
-    super.initializeImageRegistry(reg_p);
+  private void initializeImageRegistry(ImageRegistry reg_p) {
     reg_p.put(ImageID.UP.name(), CompareUI.DESC_CTOOL_PREV);
     reg_p.put(ImageID.DOWN.name(), CompareUI.DESC_CTOOL_NEXT);
     Set<ImageID> toRegister = new HashSet<ImageID>(
@@ -360,36 +404,53 @@ public class EMFDiffMergeUIPlugin extends AbstractUIPlugin {
     String path = ICON_PATH + imageID_p.name().toLowerCase() + ".gif"; //$NON-NLS-1$
     try {
       result = ImageDescriptor.createFromURL(FileLocator.toFileURL(
-          getBundle().getEntry(path)));
+          context.getBundle().getEntry(path)));
+      if (result == null
+          || result == ImageDescriptor.getMissingImageDescriptor()) {
+        // retry. some are png's
+        path = ICON_PATH + imageID_p.name().toLowerCase() + ".png"; //$NON-NLS-1$
+        result = ImageDescriptor.createFromURL(
+            FileLocator.toFileURL(context.getBundle().getEntry(path)));
+      }
+
     } catch (IOException e) {
       // Nothing needed
     }
-    if (result != null)
+    if (result != null && result != ImageDescriptor.getMissingImageDescriptor())
       reg_p.put(imageID_p.name(), result);
+    else {
+      getLog().log(new Status(IStatus.WARNING, getPluginId(),
+          "Bundle icon not found: " + path)); //$NON-NLS-1$
+    }
     return result;
   }
   
-	/**
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
-	 */
+  /**
+   * @see org.eclipse.core.runtime.Plugin#start(org.osgi.framework.BundleContext)
+   */
 	@Override
 	public void start(BundleContext context_p) throws Exception {
-		super.start(context_p);
+    super.start(context_p);
+	  context = context_p;
 		__plugin = this;
 	}
 	
-	/**
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
-	 */
+  /**
+   * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
+   */
 	@Override
 	public void stop(BundleContext context_p) throws Exception {
+    super.stop(context_p);
 	  _diffMergeLogger.close();
 	  if (_veryDarkGray != null)
 	    _veryDarkGray.dispose();
 	  if (_composedAdapterFactoryLabelProvider != null)
 	    _composedAdapterFactoryLabelProvider.dispose();
+    if (imageRegistry != null)
+      imageRegistry.dispose();
+    imageRegistry = null;
 		__plugin = null;
-		super.stop(context_p);
+    context = null;
 	}
 	
 }
