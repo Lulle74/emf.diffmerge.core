@@ -7,10 +7,12 @@ Bundle-Activator: org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.compare;visibility:=reexport,
- org.eclipse.ui;visibility:=reexport,
+ org.eclipse.jface,
+ org.eclipse.ui.workbench,
+ org.eclipse.ui.ide,
  org.eclipse.emf.ecore.edit,
  org.eclipse.emf.ecore.xmi,
- org.eclipse.emf.edit.ui;visibility:=reexport,
+ org.eclipse.emf.edit.ui,
  org.eclipse.emf.workspace,
  org.eclipse.emf.diffmerge;visibility:=reexport
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
