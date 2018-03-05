@@ -41,8 +41,6 @@ import org.eclipse.emf.diffmerge.ui.util.DiffMergeLabelProvider;
 import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.edit.domain.EditingDomain;
-import org.eclipse.emf.edit.ui.action.RedoAction;
-import org.eclipse.emf.edit.ui.action.UndoAction;
 import org.eclipse.emf.transaction.util.TransactionUtil;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -56,13 +54,6 @@ import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.IActionBars;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPartSite;
-import org.eclipse.ui.IWorkbenchSite;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.actions.ActionFactory;
 
 
 /**
@@ -76,9 +67,6 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   
   /** The name of the "current input" property */
   public static final String PROPERTY_CURRENT_INPUT = "PROPERTY_CURRENT_INPUT"; //$NON-NLS-1$
-  
-  /** The optional action bars */
-  private IActionBars _actionBars;
   
   /** The non-null set of property change listeners */
   private final Set<IPropertyChangeListener> _changeListeners;
@@ -95,12 +83,6 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   /** The last command that was executed before the last save */
   private Command _lastCommandBeforeSave;
   
-  /** The (initially null) undo action */
-  private UndoAction _undoAction;
-  
-  /** The (initially null) redo action */
-  private RedoAction _redoAction;
-  
   /** The optional navigatable for navigation from the workbench menu bar buttons */
   private INavigatable _navigatable;
   
@@ -108,15 +90,12 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   /**
    * Constructor
    * @param parent_p a non-null composite
-   * @param actionBars_p optional action bars
    */
-  public AbstractComparisonViewer(Composite parent_p, IActionBars actionBars_p) {
-    _actionBars = actionBars_p;
+  public AbstractComparisonViewer(Composite parent_p) {
     _changeListeners = new HashSet<IPropertyChangeListener>(1);
     _input = null;
     _lastCommandBeforeSave = null;
     _categoryProvider = new DefaultDifferenceCategoryProvider();
-    setupUndoRedo();
     _control = createControls(parent_p);
     hookControl(_control);
     registerNavigatable(_control, createNavigatable());
@@ -332,20 +311,6 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
     return _navigatable;
   }
   
-  /**
-   * Return the workbench page of this viewer, if any
-   * @return a potentially null page
-   */
-  protected IWorkbenchPage getPage() {
-    IWorkbenchPage result = null;
-    try {
-      IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-      result = window.getActivePage();
-    } catch (Exception e) {
-      // Just proceed
-    }
-    return result;
-  }
   
   /**
    * Return the resource manager for this viewer
@@ -361,23 +326,6 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    */
   protected Shell getShell() {
     return getControl().getShell();
-  }
-  
-  /**
-   * Return the workbench part site of this viewer, if any
-   * @return a potentially null site
-   */
-  protected IWorkbenchPartSite getSite() {
-    IWorkbenchPartSite result = null;
-    try {
-      IWorkbenchPage page = getPage();
-      IWorkbenchSite site = page.getActivePart().getSite();
-      if (site instanceof IWorkbenchPartSite)
-        result = (IWorkbenchPartSite)site;
-    } catch (Exception e) {
-      // Just proceed
-    }
-    return result;
   }
   
   /**
@@ -400,15 +348,10 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    * Dispose this viewer as a reaction to the disposal of its control
    */
   protected void handleDispose() {
-    if (_actionBars != null)
-      _actionBars.clearGlobalActionHandlers();
-    _actionBars = null;
     _changeListeners.clear();
     _input = null;
     _control = null;
     _lastCommandBeforeSave = null;
-    _undoAction = null;
-    _redoAction = null;
     _navigatable = null;
   }
   
@@ -435,16 +378,7 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   protected void inputChanged(Object input_p, Object oldInput_p) {
     if (oldInput_p instanceof ICompareInput)
       ((ICompareInput)oldInput_p).removeCompareInputChangeListener(this);
-    if (_undoAction != null) {
-      _undoAction.setEditingDomain(getEditingDomain());
-      _undoAction.update();
-    }
-    if (_redoAction != null) {
-      _redoAction.setEditingDomain(getEditingDomain());
-      _redoAction.update();
-    }
-    if (_actionBars != null)
-      _actionBars.updateActionBars();
+
     if (input_p instanceof EMFDiffNode) {
       EMFDiffNode node = (EMFDiffNode)input_p;
       registerCategories(node);
@@ -479,12 +413,8 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    * Refresh the tools of the viewer
    */
   protected void refreshTools() {
-    if (_undoAction != null)
-      _undoAction.update();
-    if (_redoAction != null)
-      _redoAction.update();
-    if (_actionBars != null)
-      _actionBars.updateActionBars();
+    // Left empty after refactoring, and making this class a Workbench-neutral
+    // base implementation
   }
   
   /**
@@ -543,50 +473,8 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    * Set up the undo/redo mechanism
    */
   protected void setupUndoRedo() {
-    // Undo
-    _undoAction = new UndoAction(null) {
-      /**
-       * @see org.eclipse.emf.edit.ui.action.UndoAction#run()
-       */
-      @Override
-      public void run() {
-        undoRedo(true);
-      }
-      /**
-       * @see org.eclipse.emf.edit.ui.action.UndoAction#update()
-       */
-      @Override
-      public void update() {
-        if (getEditingDomain() != null)
-          super.update();
-      }
-    };
-    _undoAction.setImageDescriptor(EMFDiffMergeUIPlugin.getDefault().getImageDescriptor(
-        EMFDiffMergeUIPlugin.ImageID.UNDO));
-    // Redo
-    _redoAction = new RedoAction() {
-      /**
-       * @see org.eclipse.emf.edit.ui.action.RedoAction#run()
-       */
-      @Override
-      public void run() {
-        undoRedo(false);
-      }
-      /**
-       * @see org.eclipse.emf.edit.ui.action.RedoAction#update()
-       */
-      @Override
-      public void update() {
-        if (getEditingDomain() != null)
-          super.update();
-      }
-    };
-    _redoAction.setImageDescriptor(EMFDiffMergeUIPlugin.getDefault().getImageDescriptor(
-        EMFDiffMergeUIPlugin.ImageID.REDO));
-    if (_actionBars != null) {
-      _actionBars.setGlobalActionHandler(ActionFactory.UNDO.getId(), _undoAction);
-      _actionBars.setGlobalActionHandler(ActionFactory.REDO.getId(), _redoAction);
-    }
+    // Left empty after refactoring, and making this class a Workbench-neutral
+    // base implementation. Could be removed, I guess.
   }
   
   /**

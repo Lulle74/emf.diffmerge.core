@@ -25,7 +25,6 @@ import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.domain.IEditingDomainProvider;
 import org.eclipse.emf.edit.provider.IDisposable;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.ui.IActionBars;
 
 
 /**
@@ -48,10 +47,8 @@ IEditingDomainProvider, IDisposable {
    * one in this operation.
    * @see ComparisonViewer
    * @param parent_p a non-null composite
-   * @param actionBars_p an optional IActionBars, typically for contributing global actions
-   *          such as undo/redo
    */
-  AbstractComparisonViewer createComparisonViewer(Composite parent_p, IActionBars actionBars_p);
+  AbstractComparisonViewer createComparisonViewer(Composite parent_p);
   
   /**
    * Return the editing domain in which comparison must take place, if any.

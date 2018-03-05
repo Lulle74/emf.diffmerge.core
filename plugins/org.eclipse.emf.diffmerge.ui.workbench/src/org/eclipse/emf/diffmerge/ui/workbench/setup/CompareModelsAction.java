@@ -12,13 +12,14 @@
  * 
  * </copyright>
  */
-package org.eclipse.emf.diffmerge.ui.setup;
+package org.eclipse.emf.diffmerge.ui.workbench.setup;
 
 import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.compare.CompareUI;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
+import org.eclipse.emf.diffmerge.ui.setup.ComparisonSetupManager;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -96,7 +97,7 @@ public class CompareModelsAction implements IObjectActionDelegate {
     List<Object> allSelected = getSelection();
     int size = allSelected.size();
     if (size == 2 || size == 3) {
-      ComparisonSetupManager manager = EMFDiffMergeUIPlugin.getDefault().getSetupManager();
+			ComparisonSetupManagerE3 manager = (ComparisonSetupManagerE3)EMFDiffMergeUIPlugin.getDefault().getSetupManager();
       EMFDiffMergeEditorInput editorInput =
           manager.createEditorInputWithUI(getShell(),
               allSelected.get(0), allSelected.get(1), size == 3? allSelected.get(2): null);

@@ -57,6 +57,14 @@ public class DiffMergeLabelProvider extends LabelProvider {
     return __instance;
   }
   
+  /**
+   * 
+   * @param defaultProvider
+   *          The new "default" label provider to use.
+   */
+  public static void setInstance(DiffMergeLabelProvider defaultProvider) {
+    __instance = defaultProvider;
+  }
   
   /**
    * Constructor
@@ -239,13 +247,7 @@ public class DiffMergeLabelProvider extends LabelProvider {
    */
   @Override
   public Image getImage(Object element_p) {
-    Object element = element_p;
-    if (element instanceof IModelScope)
-      element = ((IModelScope)element).getOriginator();
-    Image result = UIUtil.getEMFImage(element);
-    if (result == null)
-      result = EMFDiffMergeUIPlugin.getDefault().getImage(ImageID.EMPTY);
-    return result;
+    return EMFDiffMergeUIPlugin.getDefault().getImage(ImageID.EMPTY);
   }
   
   /**

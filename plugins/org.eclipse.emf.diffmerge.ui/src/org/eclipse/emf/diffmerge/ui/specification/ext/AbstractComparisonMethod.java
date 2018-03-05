@@ -21,7 +21,6 @@ import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.AdapterFactory;
 import org.eclipse.emf.diffmerge.api.Role;
-import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethodFactory;
 import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
@@ -41,7 +40,6 @@ import org.eclipse.emf.edit.provider.resource.ResourceItemProviderAdapterFactory
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.ui.IActionBars;
 
 
 /**
@@ -110,11 +108,11 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
   }
   
   /**
-   * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#createComparisonViewer(org.eclipse.swt.widgets.Composite, org.eclipse.ui.IActionBars)
+   * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#createComparisonViewer(org.eclipse.swt.widgets.Composite)
    */
-  public AbstractComparisonViewer createComparisonViewer(Composite parent_p,
-      IActionBars actionBars_p) {
-    AbstractComparisonViewer result = doCreateComparisonViewer(parent_p, actionBars_p);
+  public AbstractComparisonViewer createComparisonViewer(
+      Composite parent_p) {
+    AbstractComparisonViewer result = doCreateComparisonViewer(parent_p);
     IDifferenceCategoryProvider provider = getCustomCategoryProvider();
     if (provider != null)
       result.setCategoryProvider(provider);
@@ -171,28 +169,16 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
     // Dedicated transactional editing domain: dispose it
     if (domain instanceof TransactionalEditingDomain && _isDedicatedEditingDomain)
       ((TransactionalEditingDomain)domain).dispose();
-    // Also clean shared adapter factory: icons associated to resources
-    AdapterFactory af =
-        EMFDiffMergeUIPlugin.getDefault().getAdapterFactoryLabelProvider().getAdapterFactory();
-    if (af instanceof ComposedAdapterFactory) {
-      ComposedAdapterFactory composed = (ComposedAdapterFactory)af;
-      AdapterFactory afForType = composed.getFactoryForType(Resource.class.getPackage());
-      if (afForType instanceof ResourceItemProviderAdapterFactory) {
-        ResourceItemProviderAdapterFactory ripaf = (ResourceItemProviderAdapterFactory)afForType;
-        ripaf.dispose();
-      }
-    }
+
   }
   
   /**
    * Create and return the viewer for the comparison
    * @param parent_p a non-null composite
-   * @param actionBars_p an optional IActionBars, typically for contributing global actions
-   *          such as undo/redo
    */
-  protected AbstractComparisonViewer doCreateComparisonViewer(Composite parent_p,
-      IActionBars actionBars_p) {
-    return new ComparisonViewer(parent_p, actionBars_p);
+  protected AbstractComparisonViewer doCreateComparisonViewer(
+      Composite parent_p) {
+    return new ComparisonViewer(parent_p);
   }
   
   /**

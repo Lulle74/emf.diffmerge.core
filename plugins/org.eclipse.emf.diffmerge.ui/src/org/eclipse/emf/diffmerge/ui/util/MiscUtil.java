@@ -42,8 +42,6 @@ import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.operation.IThreadListener;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.progress.IProgressService;
 
 
 /**
@@ -296,8 +294,7 @@ public final class MiscUtil {
           throws InvocationTargetException, InterruptedException {
     IRunnableWithProgress operation = new RunnableWithProgressOnModel(
         behavior_p, label_p, domain_p, recordChanges_p);
-    IProgressService progress = PlatformUI.getWorkbench().getProgressService();
-    progress.busyCursorWhile(operation);
+    IProgressServiceProvider.INSTANCE.executeBusyCursor(operation);
   }
   
   /**

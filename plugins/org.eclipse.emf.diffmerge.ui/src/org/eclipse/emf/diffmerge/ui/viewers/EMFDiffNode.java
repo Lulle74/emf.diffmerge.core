@@ -38,7 +38,6 @@ import org.eclipse.emf.edit.domain.IEditingDomainProvider;
 import org.eclipse.emf.edit.provider.IDisposable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.ui.IEditorInput;
 
 
 /**
@@ -55,9 +54,6 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   
   /** The optional editing domain */
   private final EditingDomain _editingDomain;
-  
-  /** The optional associated editor input */
-  private IEditorInput _editorInput;
   
   /** The role that drives the representation of the comparison */
   private Role _drivingRole;
@@ -155,7 +151,6 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
     _resourceManager = new ComparisonResourceManager();
     _contents = new UIComparisonImpl(comparison_p);
     _editingDomain = domain_p;
-    _editorInput = null;
     _leftRole = EMFDiffMergeUIPlugin.getDefault().getDefaultLeftRole();
     _drivingRole = _leftRole;
     _twoWayReferenceRole = null;
@@ -293,7 +288,6 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
    */
   public void dispose() {
     _resourceManager.dispose();
-    _editorInput = null;
   }
   
   /**
@@ -374,14 +368,8 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
     return isThreeWay()? Role.ANCESTOR: _twoWayReferenceRole;
   }
   
-  /**
-   * Return the editor input associated to this node, if any
-   * @return a potentially null editor input
-   */
-  public IEditorInput getEditorInput() {
-    return _editorInput;
-  }
   
+
   /**
    * Return the resource manager for this node
    * @return a non-null resource manager
@@ -503,14 +491,6 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
     } else {
       _isReferenceEditionPossible = possible_p;
     }
-  }
-  
-  /**
-   * Set the editor input associated to this node
-   * @param editorInput_p a potentially null editor input
-   */
-  public void setEditorInput(IEditorInput editorInput_p) {
-    _editorInput = editorInput_p;
   }
   
   /**

@@ -42,8 +42,8 @@ import org.eclipse.emf.diffmerge.ui.Messages;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethodFactory;
 import org.eclipse.emf.diffmerge.ui.specification.IModelScopeDefinition;
 import org.eclipse.jface.window.Window;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.PlatformUI;
 
 
 /**
@@ -172,13 +172,8 @@ implements IComparisonConfigurator.Provider {
    * @return a potentially null shell (always null if current thread is not the UI thread)
    */
   public Shell getShell() {
-    Shell result;
-    try {
-      result = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-    } catch (Exception e) {
-      result = null;
-    }
-    return result;
+    return Display.getCurrent() != null ? Display.getCurrent().getActiveShell()
+        : null;
   }
   
   /**

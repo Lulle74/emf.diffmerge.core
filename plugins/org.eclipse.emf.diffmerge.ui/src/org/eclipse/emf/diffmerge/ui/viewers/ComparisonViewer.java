@@ -40,9 +40,6 @@ import org.eclipse.compare.INavigatable;
 import org.eclipse.compare.structuremergeviewer.ICompareInput;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.util.Logger;
 import org.eclipse.emf.diffmerge.api.IComparison;
 import org.eclipse.emf.diffmerge.api.IMatch;
@@ -67,20 +64,16 @@ import org.eclipse.emf.diffmerge.ui.diffuidata.impl.MatchAndFeatureImpl;
 import org.eclipse.emf.diffmerge.ui.log.CompareLogEvent;
 import org.eclipse.emf.diffmerge.ui.log.DiffMergeLogger;
 import org.eclipse.emf.diffmerge.ui.log.MergeLogEvent;
-import org.eclipse.emf.diffmerge.ui.setup.ComparisonSetupManager;
-import org.eclipse.emf.diffmerge.ui.setup.EMFDiffMergeEditorInput;
-import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.util.DelegatingLabelProvider;
 import org.eclipse.emf.diffmerge.ui.util.DifferenceKind;
+import org.eclipse.emf.diffmerge.ui.util.IProgressServiceProvider;
 import org.eclipse.emf.diffmerge.ui.util.InconsistencyDialog;
-import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
 import org.eclipse.emf.diffmerge.ui.util.UIUtil;
 import org.eclipse.emf.diffmerge.ui.viewers.FeaturesViewer.FeaturesInput;
 import org.eclipse.emf.diffmerge.ui.viewers.MergeImpactViewer.ImpactInput;
 import org.eclipse.emf.diffmerge.ui.viewers.ValuesViewer.ValuesInput;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
-import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -115,7 +108,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -123,12 +115,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Widget;
-import org.eclipse.ui.IActionBars;
-import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.IWorkbenchActionConstants;
-import org.eclipse.ui.IWorkbenchPartSite;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.progress.IProgressService;
+
 
 
 /**
@@ -207,16 +194,7 @@ public class ComparisonViewer extends AbstractComparisonViewer {
    * @param parent_p a non-null composite
    */
   public ComparisonViewer(Composite parent_p) {
-    this(parent_p, null);
-  }
-  
-  /**
-   * Constructor
-   * @param parent_p a non-null composite
-   * @param actionBars_p optional action bars
-   */
-  public ComparisonViewer(Composite parent_p, IActionBars actionBars_p) {
-    super(parent_p, actionBars_p);
+    super(parent_p);
   }
   
   /**
@@ -770,20 +748,7 @@ public class ComparisonViewer extends AbstractComparisonViewer {
         restart();
       }
     });
-    addPropertyChangeListener(new IPropertyChangeListener() {
-      /**
-       * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
-       */
-      public void propertyChange(PropertyChangeEvent event_p) {
-        if (PROPERTY_CURRENT_INPUT.equals(event_p.getProperty())) {
-          boolean enable = false;
-          EMFDiffNode input = getInput();
-          if (input != null && !result.isDisposed())
-            enable = input.getEditorInput() != null;
-          result.setEnabled(enable);
-        }
-      }
-    });
+
     return result;
   }
   
@@ -1254,14 +1219,7 @@ public class ComparisonViewer extends AbstractComparisonViewer {
         viewer_p.getInnerViewer(): getMultiViewerSelectionProvider();
     // Diff/merge-specific menu items
     populateContextMenu(result, viewer_p, selectionProvider);
-    // External contributions
-    if (acceptContextMenuAdditions(viewer_p)) {
-      IWorkbenchPartSite site = getSite();
-      if (site != null) {
-        result.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
-        site.registerContextMenu(result, selectionProvider);
-      }
-    }
+
     return result;
   }
   
@@ -1653,9 +1611,9 @@ public class ComparisonViewer extends AbstractComparisonViewer {
   protected List<IDifference> getDifferencesToMerge(final List<EMatch> selectedMatches_p,
       final Role destination_p, final boolean coverChildren_p, final boolean incrementalMode_p) {
     final List<IDifference> result = new ArrayList<IDifference>();
-    IProgressService progress = PlatformUI.getWorkbench().getProgressService();
     try {
-      progress.busyCursorWhile(new IRunnableWithProgress() {
+      IProgressServiceProvider.INSTANCE
+          .executeBusyCursor(new IRunnableWithProgress() {
         /**
          * @see org.eclipse.jface.operation.IRunnableWithProgress#run(IProgressMonitor)
          */
@@ -2261,57 +2219,8 @@ public class ComparisonViewer extends AbstractComparisonViewer {
    * Restart the comparison via a GUI
    */
   protected void restart() {
-    final EMFDiffNode input = getInput();
-    IEditorInput rawEditorInput = input == null? null: input.getEditorInput();
-    if (input != null && rawEditorInput instanceof EMFDiffMergeEditorInput) {
-      final EMFDiffMergeEditorInput editorInput = (EMFDiffMergeEditorInput)rawEditorInput;
-      ComparisonSetupManager manager = EMFDiffMergeUIPlugin.getDefault().getSetupManager();
-      boolean confirmed = manager.updateEditorInputWithUI(getShell(), editorInput);
-      if (confirmed) {
-        final IComparisonMethod method = editorInput.getComparisonMethod();
-        method.setVerbose(false);
-        Job job = new Job(Messages.ComparisonViewer_RestartInProgress) {
-          /**
-           * @see org.eclipse.core.runtime.jobs.Job#run(org.eclipse.core.runtime.IProgressMonitor)
-           */
-          @Override
-          protected IStatus run(final IProgressMonitor monitor_p) {
-            MiscUtil.executeAndForget(getEditingDomain(), new Runnable() {
-              /**
-               * @see java.lang.Runnable#run()
-               */
-              public void run() {
-                input.setReferenceRole(method.getTwoWayReferenceRole());
-                boolean leftEditable = method.getModelScopeDefinition(
-                    input.getRoleForSide(true)).isEditable();
-                boolean rightEditable = method.getModelScopeDefinition(
-                    input.getRoleForSide(false)).isEditable();
-                input.setEditionPossible(leftEditable, true);
-                input.setEditionPossible(rightEditable, false);
-                input.getUIComparison().clear();
-                input.getActualComparison().compute(
-                    method.getMatchPolicy(), method.getDiffPolicy(), method.getMergePolicy(),
-                    monitor_p);
-                input.getCategoryManager().update();
-              }
-            });
-            Display.getDefault().syncExec(new Runnable() {
-              /**
-               * @see java.lang.Runnable#run()
-               */
-              public void run() {
-                firePropertyChangeEvent(PROPERTY_CURRENT_INPUT, null);
-                refresh();
-              }
-            });
-            editorInput.checkInconsistency(input.getActualComparison());
-            return Status.OK_STATUS;
-          }
-        };
-        job.setUser(true);
-        job.schedule();
-      }
-    }
+    // Left empty after refactoring, and making this class a Workbench-neutral
+    // base implementation
   }
 
   /**
@@ -2547,9 +2456,9 @@ public class ComparisonViewer extends AbstractComparisonViewer {
       final boolean toLeft_p, final EMFDiffNode input_p) {
     boolean result = true;
     final ImpactInput mergeInput = new ImpactInput(toMerge_p, toLeft_p, input_p);
-    IProgressService progress = PlatformUI.getWorkbench().getProgressService();
     try {
-      progress.busyCursorWhile(new IRunnableWithProgress() {
+      IProgressServiceProvider.INSTANCE
+          .executeBusyCursor(new IRunnableWithProgress() {
         /**
          * @see org.eclipse.jface.operation.IRunnableWithProgress#run(IProgressMonitor)
          */

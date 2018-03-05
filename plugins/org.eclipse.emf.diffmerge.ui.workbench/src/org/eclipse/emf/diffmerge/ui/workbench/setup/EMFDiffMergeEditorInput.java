@@ -12,7 +12,7 @@
  * 
  * </copyright>
  */
-package org.eclipse.emf.diffmerge.ui.setup;
+package org.eclipse.emf.diffmerge.ui.workbench.setup;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.EventObject;
@@ -46,6 +46,8 @@ import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
 import org.eclipse.emf.diffmerge.ui.viewers.AbstractComparisonViewer;
 import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.diffmerge.ui.viewers.SelectionBridge;
+import org.eclipse.emf.diffmerge.ui.workbench.specification.ext.IComparisonMethodE3;
+import org.eclipse.emf.diffmerge.ui.workbench.viewers.EMFDiffNodeE3;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -97,7 +99,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   
   /** The non-null (unless disposed) comparison method **/
   protected IComparisonMethod _comparisonMethod;
-  
+
   /** The initially null resource that holds the comparison */
   protected Resource _comparisonResource;
   
@@ -225,8 +227,13 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   @Override
   public Control createContents(Composite parent_p) {
     // Create viewer
-    _viewer = _comparisonMethod.createComparisonViewer(parent_p, getActionBars());
-    // Plug it to the selection provider
+		if ( _comparisonMethod instanceof IComparisonMethodE3 ) {
+			_viewer = ((IComparisonMethodE3)_comparisonMethod).createComparisonViewer( parent_p, getActionBars() );
+		}
+		else {
+			_viewer = _comparisonMethod.createComparisonViewer( parent_p );
+		}
+		// Plug it to the selection provider
     if (_selectionBridge != null)
       _viewer.getMultiViewerSelectionProvider().addSelectionChangedListener(_selectionBridge);
     _viewer.addPropertyChangeListener(new IPropertyChangeListener() {
@@ -472,6 +479,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
         }
       });
     }
+
     if (_commandStackListener != null && getEditingDomain() != null)
       getEditingDomain().getCommandStack().removeCommandStackListener(_commandStackListener);
     super.handleDispose();
@@ -578,7 +586,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
       _comparisonResource = resourceSet.createResource(URI.createURI(resourceURI));
     }
     CompareConfiguration cc = getCompareConfiguration();
-    EMFDiffNode result = new EMFDiffNode(
+		EMFDiffNodeE3 result = new EMFDiffNodeE3(
         comparison_p, getEditingDomain(), cc.isLeftEditable(), cc.isRightEditable());
     result.setReferenceRole(_comparisonMethod.getTwoWayReferenceRole());
     result.setEditorInput(this);

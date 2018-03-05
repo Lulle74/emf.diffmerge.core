@@ -26,7 +26,6 @@ import org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.provider.IItemLabelProvider;
 import org.eclipse.emf.edit.provider.ReflectiveItemProvider;
-import org.eclipse.emf.edit.ui.provider.ExtendedImageRegistry;
 import org.eclipse.emf.transaction.util.TransactionUtil;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -40,7 +39,6 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
@@ -149,41 +147,12 @@ public final class UIUtil {
   }
   
   /**
-   * Return an image for the given element solely based on EMF mechanisms
-   * @param element_p a non-null object
-   * @return a potentially null image
-   */
-  public static Image getEMFImage(Object element_p) {
-    Image result =
-        EMFDiffMergeUIPlugin.getDefault().getAdapterFactoryLabelProvider().getImage(element_p);
-    if (result == null) {
-      // Try editing domain
-      EditingDomain rawEditingDomain = AdapterFactoryEditingDomain.getEditingDomainFor(element_p);
-      if (rawEditingDomain == null)
-        rawEditingDomain = TransactionUtil.getEditingDomain(element_p);
-      if (rawEditingDomain instanceof AdapterFactoryEditingDomain) {
-        AdapterFactoryEditingDomain editingDomain = (AdapterFactoryEditingDomain)rawEditingDomain;
-        IItemLabelProvider provider = (IItemLabelProvider)editingDomain.getAdapterFactory().adapt(
-            element_p, IItemLabelProvider.class);
-        if (provider != null) {
-          Object rawImage = provider.getImage(element_p);
-          if (rawImage != null)
-            result = ExtendedImageRegistry.getInstance().getImage(rawImage);
-        }
-      }
-    }
-    return result;
-  }
-  
-  /**
    * Return a label for the given element solely based on EMF mechanisms (editing domain, .edit plugins)
    * @param element_p a potentially null object
    * @return a potentially null string
    */
   public static String getEMFText(Object element_p) {
-    String result =
-        EMFDiffMergeUIPlugin.getDefault().getAdapterFactoryLabelProvider().getText(element_p);
-    if (result == null) {
+    String result = null;
       // Try editing domain
       EditingDomain rawEditingDomain = AdapterFactoryEditingDomain.getEditingDomainFor(element_p);
       if (rawEditingDomain == null)
@@ -195,7 +164,7 @@ public final class UIUtil {
         if (provider != null)
           result = provider.getText(element_p);
       }
-    }
+
     return result;
   }
   

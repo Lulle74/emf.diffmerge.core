@@ -19,6 +19,7 @@ import java.util.Collection;
 import org.eclipse.emf.diffmerge.api.IComparison;
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
+import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.ImageID;
 import org.eclipse.emf.diffmerge.ui.Messages;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -47,8 +48,6 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.ISharedImages;
-import org.eclipse.ui.PlatformUI;
 
 
 /**
@@ -142,8 +141,8 @@ public class InconsistencyDialog extends MessageDialog {
     Menu menu = new Menu(viewer_p.getControl());
     final MenuItem result = new MenuItem(menu, SWT.PUSH);
     result.setText(Messages.InconsistencyDialog_CopyID);
-    result.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(
-            ISharedImages.IMG_TOOL_COPY));
+    result.setImage(
+        EMFDiffMergeUIPlugin.getDefault().getImage(ImageID.IMG_TOOL_COPY));
     viewer_p.addSelectionChangedListener(new ISelectionChangedListener() {
       /**
        * @see org.eclipse.jface.viewers.ISelectionChangedListener#selectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)

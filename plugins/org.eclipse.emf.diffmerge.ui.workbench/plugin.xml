@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+	<extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="org.eclipse.emf.diffmerge.ui.compareWithEachOther"
+            objectClass="org.eclipse.core.resources.IFile">
+         <action
+               class="org.eclipse.emf.diffmerge.ui.workbench.setup.CompareModelsAction"
+               enablesFor="2+"
+               id="org.eclipse.emf.diffmerge.ui.compareFilesAction"
+               label="Each Other as models"
+               menubarPath="compareWithMenu/compareWithGroup">
+         </action>
+      </objectContribution>
+   </extension>
+   
+   <extension
+         point="org.eclipse.core.runtime.adapters">
+      <factory
+            adaptableType="org.eclipse.ui.IReusableEditor"
+            class="org.eclipse.emf.diffmerge.ui.workbench.setup.CompareEditorAdapterFactory">
+         <adapter
+               type="org.eclipse.ui.views.properties.IPropertySheetPage">
+         </adapter>
+      </factory>
+   </extension>
+   
+   <extension
+         point="org.eclipse.emf.diffmerge.ui.modelComparisonContext">
+      <comparisonMethod
+            factory="org.eclipse.emf.diffmerge.ui.workbench.specification.ext.ConfigurableComparisonMethodFactory">
+      </comparisonMethod>
+   </extension>
+</plugin>

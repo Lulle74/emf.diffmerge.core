@@ -16,9 +16,7 @@ package org.eclipse.emf.diffmerge.ui;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.compare.CompareUI;
@@ -27,7 +25,6 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.emf.common.util.Logger;
-import org.eclipse.emf.diffmerge.EMFDiffMergePlugin;
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.ui.diffuidata.DiffuidataPackage;
 import org.eclipse.emf.diffmerge.ui.log.DiffMergeLogger;
@@ -36,7 +33,6 @@ import org.eclipse.emf.diffmerge.ui.util.DifferenceKind;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.EcorePackage;
-import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.SWT;
@@ -44,8 +40,6 @@ import org.eclipse.swt.SWTError;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.ISharedImages;
-import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.BundleContext;
 
 
@@ -64,7 +58,7 @@ public class EMFDiffMergeUIPlugin extends Plugin {
   @SuppressWarnings("javadoc")
   public static enum ImageID {
     CHECKED, CHECKED_DISABLED, CHECKIN_ACTION, CHECKOUT_ACTION, COLLAPSEALL, CONFLICT_STAT, DELETE,
-    DOWN, EMPTY, EXPANDALL, FILTER, INC_STAT, INC_ADD_STAT, INC_REM_STAT, LEFT, LOCK, LOCK_CLOSED,
+    DOWN, EMPTY, EXPANDALL, FILTER, IMG_TOOL_COPY, INC_STAT, INC_ADD_STAT, INC_REM_STAT, LEFT, LOCK, LOCK_CLOSED,
     LOCK_OPEN, MODIFIED_STAT, NEXT_CHANGE_NAV, NEXT_DIFF_NAV, OUT_STAT, OUT_ADD_STAT, OUT_REM_STAT,
     PLUS, PREV_CHANGE_NAV, PREV_DIFF_NAV, REDO, RIGHT, SHOW, SORT, SWAP, SYNCED, TREE, UNCHECKED,
     UNCHECKED_DISABLED, UNDO, UP, UPDATE, VIEW_MENU, WARNING }
@@ -88,7 +82,7 @@ public class EMFDiffMergeUIPlugin extends Plugin {
 	private static EMFDiffMergeUIPlugin __plugin;
 	
 	/** The manager for comparison contexts */
-	private final ComparisonSetupManager _comparisonSetupManager;
+  private ComparisonSetupManager _comparisonSetupManager;
 	
 	/** The logger for diff/merge events */
 	private final DiffMergeLogger _diffMergeLogger;
@@ -99,11 +93,6 @@ public class EMFDiffMergeUIPlugin extends Plugin {
   /** The "very dark gray" non-system color (initially null) */
   private Color _veryDarkGray;
   
-  /** A label provider based on the EMF Edit registry (initially null) */
-  private AdapterFactoryLabelProvider _composedAdapterFactoryLabelProvider;
-  
-  /** A map from a subset of image IDs to the corresponding shared image identifiers */
-  private Map<ImageID, String> _sharedImageMap;
   
   /**
    * The registry for all graphic images; <code>null</code> if not yet
@@ -119,31 +108,8 @@ public class EMFDiffMergeUIPlugin extends Plugin {
 	  _comparisonSetupManager = new ComparisonSetupManager();
 	  _ownershipFeature = createOwnershipFeature();
 	  _veryDarkGray = null;
-	  _composedAdapterFactoryLabelProvider = null;
-    // _sharedImageMap = createImageMap();
 	}
 	
-
-	/**
-	 * Return a map from a subset of image IDs to the corresponding shared image identifiers
-	 * @return a non-null map
-	 */
-	protected Map<ImageID, String> createImageMap() {
-	  Map<ImageID, String> result = new HashMap<ImageID, String>();
-    // Can only be used in case of old 3.x platform
-    if (PlatformUI.isWorkbenchRunning()) {
-      result.put(ImageID.DELETE, ISharedImages.IMG_TOOL_DELETE);
-      result.put(ImageID.LEFT, ISharedImages.IMG_TOOL_BACK);
-      result.put(ImageID.REDO, ISharedImages.IMG_TOOL_REDO);
-      result.put(ImageID.RIGHT, ISharedImages.IMG_TOOL_FORWARD);
-      result.put(ImageID.SHOW, ISharedImages.IMG_OBJS_INFO_TSK);
-      result.put(ImageID.UNDO, ISharedImages.IMG_TOOL_UNDO);
-      result.put(ImageID.WARNING, ISharedImages.IMG_OBJS_WARN_TSK);
-    }
-    // else: see lookup using the _sharedImageMap: will "go local" instead if
-    // missing
-    return result;
-  }
 	
   /**
 	 * Return a reference representing the virtual "ownership" feature
@@ -158,17 +124,8 @@ public class EMFDiffMergeUIPlugin extends Plugin {
 	  return result;
 	}
 	
-	/**
-	 * Return a label provider that is based on the EMF Edit registry
-	 * @return a non-null object
-	 */
-	public AdapterFactoryLabelProvider getAdapterFactoryLabelProvider() {
-	  if (_composedAdapterFactoryLabelProvider == null)
-	    _composedAdapterFactoryLabelProvider = new AdapterFactoryLabelProvider(
-	        EMFDiffMergePlugin.getDefault().getAdapterFactory());
-	  return _composedAdapterFactoryLabelProvider;
-	}
 	
+
   /**
    * Return the shared instance of this activator
    * @return a non-null object
@@ -289,16 +246,7 @@ public class EMFDiffMergeUIPlugin extends Plugin {
    * @return a (normally) non-null image
    */
   public Image getImage(ImageID id_p) {
-    if (_sharedImageMap == null) {
-      _sharedImageMap = createImageMap();
-    }
-    Image result;
-    String sharedID = _sharedImageMap.get(id_p);
-    if (sharedID != null && PlatformUI.isWorkbenchRunning()) {
-        result = PlatformUI.getWorkbench().getSharedImages().getImage(sharedID);
-    } else {
-      result = getImageRegistry().get(id_p.name());
-    }
+    Image result = getImageRegistry().get(id_p.name());
     return result;
   }
   
@@ -317,9 +265,9 @@ public class EMFDiffMergeUIPlugin extends Plugin {
       return new ImageRegistry(Display.getCurrent());
     }
     // 3.x platform:
-    if (PlatformUI.isWorkbenchRunning()) {
-      return new ImageRegistry(PlatformUI.getWorkbench().getDisplay());
-    }
+    // if (PlatformUI.isWorkbenchRunning()) {
+    // return new ImageRegistry(PlatformUI.getWorkbench().getDisplay());
+    // }
 
     // Invalid thread access if it is not the UI Thread
     // and the workbench is not created.
@@ -332,18 +280,7 @@ public class EMFDiffMergeUIPlugin extends Plugin {
    * @return a (normally) non-null image
    */
   public ImageDescriptor getImageDescriptor(ImageID id_p) {
-    if (_sharedImageMap == null) {
-      _sharedImageMap = createImageMap();
-    }
-    ImageDescriptor result;
-    String sharedID = _sharedImageMap.get(id_p);
-    if (sharedID != null && PlatformUI.isWorkbenchRunning()) {
-      result = PlatformUI.getWorkbench().getSharedImages()
-          .getImageDescriptor(sharedID);
-
-    } else {
-      result = getImageRegistry().getDescriptor(id_p.name());
-    }
+    ImageDescriptor result = getImageRegistry().getDescriptor(id_p.name());
     return result;
   }
   
@@ -363,6 +300,15 @@ public class EMFDiffMergeUIPlugin extends Plugin {
     return context.getBundle().getSymbolicName();
   }
   
+  /**
+   * Method introduced to allow for better separation between platform and E3
+   * Workbench dependent things.
+   * 
+   * @param manager
+   */
+  public void setComparisonSetupManager(ComparisonSetupManager manager) {
+    _comparisonSetupManager = manager;
+  }
   /**
    * Return the comparison setup manager
    * @return a non-null object
@@ -386,7 +332,6 @@ public class EMFDiffMergeUIPlugin extends Plugin {
     reg_p.put(ImageID.DOWN.name(), CompareUI.DESC_CTOOL_NEXT);
     Set<ImageID> toRegister = new HashSet<ImageID>(
         Arrays.asList(ImageID.values()));
-    toRegister.removeAll(_sharedImageMap.keySet());
     toRegister.removeAll(Arrays.asList(ImageID.DOWN, ImageID.UP));
     for (ImageID imageId : toRegister) {
       registerLocalIcon(imageId, reg_p);
@@ -444,8 +389,7 @@ public class EMFDiffMergeUIPlugin extends Plugin {
 	  _diffMergeLogger.close();
 	  if (_veryDarkGray != null)
 	    _veryDarkGray.dispose();
-	  if (_composedAdapterFactoryLabelProvider != null)
-	    _composedAdapterFactoryLabelProvider.dispose();
+
     if (imageRegistry != null)
       imageRegistry.dispose();
     imageRegistry = null;

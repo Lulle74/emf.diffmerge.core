@@ -28,7 +28,6 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.ui.IActionBars;
 
 
 /**
@@ -47,27 +46,16 @@ public class DirectedComparisonViewer extends ComparisonViewer {
    * @param parent_p a non-null composite
    */
   public DirectedComparisonViewer(Composite parent_p) {
-    this(parent_p, null);
-  }
-  
-  /**
-   * Constructor (left-to-right)
-   * @param parent_p a non-null composite
-   * @param actionBars_p optional action bars
-   */
-  public DirectedComparisonViewer(Composite parent_p, IActionBars actionBars_p) {
-    this(parent_p, actionBars_p, true);
+    this(parent_p, true);
   }
   
   /**
    * Constructor
    * @param parent_p a non-null composite
-   * @param actionBars_p optional action bars
    * @param isLeftToRight_p whether the side of the resulting model is right
    */
-  public DirectedComparisonViewer(Composite parent_p, IActionBars actionBars_p,
-      boolean isLeftToRight_p) {
-    super(parent_p, actionBars_p);
+  public DirectedComparisonViewer(Composite parent_p, boolean isLeftToRight_p) {
+    super(parent_p);
     _isLeftToRight = isLeftToRight_p;
   }
   

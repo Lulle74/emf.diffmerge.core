@@ -29,13 +29,14 @@ import org.eclipse.emf.diffmerge.connector.core.Messages;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
 import org.eclipse.emf.diffmerge.ui.setup.ComparisonSetup;
 import org.eclipse.emf.diffmerge.ui.setup.ComparisonSetupManager;
-import org.eclipse.emf.diffmerge.ui.setup.EMFDiffMergeEditorInput;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.specification.IModelScopeDefinition;
 import org.eclipse.emf.diffmerge.ui.specification.ITimestampProvider;
 import org.eclipse.emf.diffmerge.ui.specification.ext.ConfigurableComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.viewers.AbstractComparisonViewer;
 import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
+import org.eclipse.emf.diffmerge.ui.workbench.setup.ComparisonSetupManagerE3;
+import org.eclipse.emf.diffmerge.ui.workbench.setup.EMFDiffMergeEditorInput;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.util.IPropertyChangeListener;
@@ -110,7 +111,8 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    */
   protected void closeEditor() {
     IWorkbenchWindow activeWorkbenchWindow =
-        EMFDiffMergeUIPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow();
+        EMFDiffMergeCoreConnectorPlugin.getDefault().getWorkbench()
+            .getActiveWorkbenchWindow();
     if (activeWorkbenchWindow != null) {
       IWorkbenchPage page = activeWorkbenchWindow.getActivePage();
       if (page != null) {
@@ -194,8 +196,12 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
         result = new EMFDiffMergeEditorInput(method);
       }
     }
-    if (result == null)
-      result = manager_p.createEditorInputWithUI(getShell(), setup);
+    if (result == null) {
+      if (manager_p instanceof ComparisonSetupManagerE3) {
+        result = ((ComparisonSetupManagerE3) manager_p)
+            .createEditorInputWithUI(getShell(), setup);
+      }
+    }
     return result;
   }
   
