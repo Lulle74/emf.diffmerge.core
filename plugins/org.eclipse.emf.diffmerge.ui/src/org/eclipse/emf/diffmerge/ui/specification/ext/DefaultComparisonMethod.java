@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.specification.ext;
 
 import java.util.HashMap;
@@ -59,10 +56,11 @@ public class DefaultComparisonMethod extends AbstractComparisonMethod {
       IModelScopeDefinition rightScopeDef_p, IModelScopeDefinition ancestorScopeDef_p,
       IComparisonMethodFactory factory_p) {
     super();
+    Role leftRole = getLeftRole();
     _factory = factory_p;
     _roleToScopeDefinition = new HashMap<Role, IModelScopeDefinition>();
-    _roleToScopeDefinition.put(Role.TARGET, leftScopeDef_p);
-    _roleToScopeDefinition.put(Role.REFERENCE, rightScopeDef_p);
+    _roleToScopeDefinition.put(leftRole, leftScopeDef_p);
+    _roleToScopeDefinition.put(leftRole.opposite(), rightScopeDef_p);
     _roleToScopeDefinition.put(Role.ANCESTOR, ancestorScopeDef_p);
     _twoWayReferenceRole = null;
     _matchPolicy = createMatchPolicy();

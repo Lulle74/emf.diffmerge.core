@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2014-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2014-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import org.eclipse.emf.diffmerge.ui.util.UIUtil;
@@ -132,7 +129,6 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
    */
   protected Label createImageLabel(Composite parent_p) {
     Label result = new Label(parent_p, SWT.NONE);
-    result.setBackground(UIUtil.getColor(SWT.COLOR_WHITE));
     return result;
   }
   
@@ -173,6 +169,19 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
   }
   
   /**
+   * Return the text of the header, if any
+   * @return a potentially null string
+   */
+  public String getHeaderText() {
+    String result = null;
+    Label headerLabel = getTextLabel();
+    if (headerLabel != null && !headerLabel.isDisposed()) {
+      result = headerLabel.getText();
+    }
+    return result;
+  }
+  
+  /**
    * Return the control that holds the header image for this viewer, if any
    * @return a potentially null control
    */
@@ -181,7 +190,7 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
   }
   
   /**
-   * Return the wrapped viewer
+   * Return the wrapped viewer, non-null after controls have been created
    */
   public V getInnerViewer() {
     return _innerViewer;
@@ -224,8 +233,9 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
    */
   @Override
   protected void inputChanged(Object input_p, Object oldInput_p) {
-    if (!_innerViewer.getControl().isDisposed())
+    if (!_innerViewer.getControl().isDisposed()) {
       _innerViewer.setInput(input_p);
+    }
   }
   
   /**
@@ -240,8 +250,9 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
    */
   @Override
   public void refresh() {
-    if (!_innerViewer.getControl().isDisposed())
+    if (!_innerViewer.getControl().isDisposed()) {
       _innerViewer.refresh();
+    }
   }
   
   /**
@@ -250,6 +261,21 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
   @Override
   public void removeSelectionChangedListener(ISelectionChangedListener listener_p) {
     getInnerViewer().removeSelectionChangedListener(listener_p);
+  }
+  
+  /**
+   * Set the text of the header, if any
+   * @param text_p a potentially null string
+   * @return whether the operation succeeded
+   */
+  public boolean setHeaderText(String text_p) {
+    boolean result = false;
+    Label headerLabel = getTextLabel();
+    if (headerLabel != null && !headerLabel.isDisposed()) {
+      headerLabel.setText(text_p);
+      result = true;
+    }
+    return result;
   }
   
   /**
@@ -266,8 +292,9 @@ public abstract class HeaderViewer<V extends Viewer> extends Viewer {
    */
   @Override
   public void setSelection(ISelection selection_p, boolean reveal_p) {
-    if (!_innerViewer.getControl().isDisposed())
+    if (!_innerViewer.getControl().isDisposed()) {
       _innerViewer.setSelection(selection_p, reveal_p);
+    }
   }
   
 }

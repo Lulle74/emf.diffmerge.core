@@ -1,25 +1,27 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2014-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2014-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
+
+import static org.eclipse.emf.diffmerge.ui.viewers.DefaultUserProperties.P_TECHNICAL_LABELS;
 
 import org.eclipse.emf.diffmerge.api.IMatch;
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.ui.Messages;
 import org.eclipse.emf.diffmerge.ui.util.UIUtil;
 import org.eclipse.emf.diffmerge.ui.viewers.FeaturesViewer.FeaturesInput;
+import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.jface.util.IPropertyChangeListener;
+import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
@@ -32,12 +34,17 @@ import org.eclipse.swt.widgets.Label;
  */
 public class EnhancedFeaturesViewer extends HeaderViewer<FeaturesViewer> {
   
+  /** A listener to changes on properties of the input */
+  protected final IPropertyChangeListener _inputPropertyChangeListener;
+  
+  
   /**
    * Constructor
    * @param parent_p a non-null composite
    */
   public EnhancedFeaturesViewer(Composite parent_p) {
     super();
+    _inputPropertyChangeListener = createInputPropertyChangeListener();
     createControls(parent_p); 
   }
   
@@ -58,6 +65,23 @@ public class EnhancedFeaturesViewer extends HeaderViewer<FeaturesViewer> {
   }
   
   /**
+   * Create and return a listener to changes on properties of the input
+   * @return a non-null object
+   */
+  protected IPropertyChangeListener createInputPropertyChangeListener() {
+    return new IPropertyChangeListener() {
+      /**
+       * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
+       */
+      public void propertyChange(PropertyChangeEvent event_p) {
+        if (P_TECHNICAL_LABELS.matches(event_p)) {
+          updateTextLabel();
+        }
+      }
+    };
+  }
+  
+  /**
    * @see org.eclipse.emf.diffmerge.ui.viewers.HeaderViewer#createTextLabel(org.eclipse.swt.widgets.Composite)
    */
   @Override
@@ -65,6 +89,27 @@ public class EnhancedFeaturesViewer extends HeaderViewer<FeaturesViewer> {
     Label result = super.createTextLabel(parent_p);
     result.setFont(UIUtil.getBold(result.getFont()));
     result.setText(getDefaultText());
+    return result;
+  }
+  
+  /**
+   * Return context-sensitive text for the header
+   * @param input_p a non-null input object
+   * @return a potentially null string
+   */
+  protected String getContextualText(FeaturesInput input_p) {
+    EObject element = getDrivingElement(input_p);
+    boolean useTechnicalLabels =
+        input_p.getContext().isUserPropertyTrue(P_TECHNICAL_LABELS);
+    String formattedTypeText;
+    if (useTechnicalLabels) {
+      EClass type = element.eClass();
+      formattedTypeText = type.getEPackage().getName() + '.' + type.getName();
+    } else {
+      formattedTypeText = UIUtil.getFormattedTypeText(element);
+    }
+    String result = String.format(
+        Messages.EnhancedFeaturesViewer_DetailsWithSelection, formattedTypeText);
     return result;
   }
   
@@ -103,21 +148,33 @@ public class EnhancedFeaturesViewer extends HeaderViewer<FeaturesViewer> {
    */
   @Override
   protected void inputChanged(Object input_p, Object oldInput_p) {
+    super.inputChanged(input_p, oldInput_p);
+    if (oldInput_p instanceof FeaturesInput) {
+      ((FeaturesInput)oldInput_p).getContext().removeUserPropertyChangeListener(
+          P_TECHNICAL_LABELS, _inputPropertyChangeListener);
+    }
+    if (input_p instanceof FeaturesInput) {
+      ((FeaturesInput)input_p).getContext().addUserPropertyChangeListener(
+          P_TECHNICAL_LABELS, _inputPropertyChangeListener);
+    }
+    updateTextLabel();
+  }
+  
+  /**
+   * Update the header text according to the current input
+   */
+  protected void updateTextLabel() {
     Label textLabel = getTextLabel();
     if (textLabel != null && !textLabel.isDisposed()) {
+      FeaturesInput input = getInput();
       String newText;
-      if (input_p instanceof FeaturesInput) {
-        FeaturesInput input = (FeaturesInput)input_p;
-        EObject element = getDrivingElement(input);
-        String formattedTypeText = UIUtil.getFormattedTypeText(element);
-        newText = String.format(
-            Messages.EnhancedFeaturesViewer_DetailsWithSelection, formattedTypeText);
+      if (input != null) {
+        newText = getContextualText(input);
       } else {
         newText = getDefaultText();
       }
       textLabel.setText(newText);
     }
-    super.inputChanged(input_p, oldInput_p);
   }
   
 }

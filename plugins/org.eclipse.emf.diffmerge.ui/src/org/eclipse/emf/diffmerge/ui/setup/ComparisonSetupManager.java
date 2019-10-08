@@ -1,23 +1,21 @@
-/**
- * <copyright>
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.setup;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -190,13 +188,35 @@ public class ComparisonSetupManager {
    */
   public List<IModelScopeDefinitionFactory> getApplicableModelScopeFactories(
       Object entrypoint_p) {
-    List<IModelScopeDefinitionFactory> result = new ArrayList<IModelScopeDefinitionFactory>();
+    LinkedList<IModelScopeDefinitionFactory> expandedResult =
+        new LinkedList<IModelScopeDefinitionFactory>();
     for (IModelScopeDefinitionFactory factory : getRegisteredModelScopeDefinitionFactories()) {
-      if (factory.isApplicableTo(entrypoint_p))
-        result.add(factory);
+      if (factory.isApplicableTo(entrypoint_p)) {
+        if (factory instanceof IModelScopeDefinitionFactory.Delegating) {
+          // Delegating factories have priority
+          expandedResult.addFirst(factory);
+        } else {
+          expandedResult.addLast(factory);
+        }
+      }
     }
-    result = reduceByOverride(result, _scopeFactories);
+    List<IModelScopeDefinitionFactory> result = reduceByOverride(expandedResult, _scopeFactories);
     return Collections.unmodifiableList(result);
+  }
+  
+  /**
+   * Return the registered comparison method factory that has the given ID
+   * @param id_p a non-null string
+   * @return a potentially null comparison method factory
+   */
+  public IComparisonMethodFactory getComparisonMethodFactory(String id_p) {
+    Collection<IComparisonMethodFactory> factories =
+        getRegisteredComparisonMethodFactories();
+    for (IComparisonMethodFactory current : factories) {
+      if (id_p.equals(current.getID()))
+          return current;
+    }
+    return null;
   }
   
   /**

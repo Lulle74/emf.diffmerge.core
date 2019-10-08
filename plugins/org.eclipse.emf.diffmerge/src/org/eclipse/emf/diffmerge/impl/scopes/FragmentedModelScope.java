@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.impl.scopes;
 
 import java.io.InputStream;
@@ -26,7 +23,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.diffmerge.api.scopes.IFragmentedModelScope;
@@ -36,11 +32,11 @@ import org.eclipse.emf.diffmerge.structures.binary.IBinaryRelation;
 import org.eclipse.emf.diffmerge.structures.common.FArrayList;
 import org.eclipse.emf.diffmerge.structures.common.FOrderedSet;
 import org.eclipse.emf.diffmerge.util.ModelImplUtil;
+import org.eclipse.emf.diffmerge.util.ModelsUtil;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.util.ECrossReferenceAdapter;
 import org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.domain.IEditingDomainProvider;
@@ -64,7 +60,7 @@ import org.eclipse.emf.edit.domain.IEditingDomainProvider;
  * @author Olivier Constant
  */
 public class FragmentedModelScope extends AbstractEditableModelScope
-implements IFragmentedModelScope.Editable {
+implements IFragmentedModelScope.Editable, IEditingDomainProvider {
   
   /** Whether the resources should be opened in read-only mode */
   private final boolean _isReadOnly;
@@ -311,10 +307,7 @@ implements IFragmentedModelScope.Editable {
    * Result is guaranteed to be accurate only if hasBeenExplored().
    */
   public List<EObject> getContents() {
-    List<EObject> result = new FArrayList<EObject>();
-    for (Resource resource : _rootResources)
-      result.addAll(resource.getContents());
-    return Collections.unmodifiableList(result);
+    return getRawContents();
   }
   
   /**
@@ -333,6 +326,13 @@ implements IFragmentedModelScope.Editable {
   @Override
   protected Object getDefaultOriginator() {
     return getHoldingResource();
+  }
+  
+  /**
+   * @see org.eclipse.emf.edit.domain.IEditingDomainProvider#getEditingDomain()
+   */
+  public EditingDomain getEditingDomain() {
+    return _editingDomain;
   }
   
   /**
@@ -367,6 +367,17 @@ implements IFragmentedModelScope.Editable {
   protected Map<Object, Object> getLoadOptions(Resource resource_p) {
     // Override if needed
     return new HashMap<Object, Object>();
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.api.scopes.IFragmentedModelScope#getRawContents()
+   * Result is guaranteed to be accurate only if hasBeenExplored().
+   */
+  public List<EObject> getRawContents() {
+    List<EObject> result = new FArrayList<EObject>();
+    for (Resource resource : _rootResources)
+      result.addAll(resource.getContents());
+    return Collections.unmodifiableList(result);
   }
   
   /**
@@ -601,19 +612,15 @@ implements IFragmentedModelScope.Editable {
    * @see org.eclipse.emf.diffmerge.api.scopes.IPersistentModelScope#unload()
    */
   public List<Resource> unload() {
-    for (Resource loadedResource : _loadedResources) {
-      for (Adapter adapter : new ArrayList<Adapter>(loadedResource.eAdapters())) {
-        if (adapter instanceof ECrossReferenceAdapter)
-          loadedResource.eAdapters().remove(adapter);
-      }
-    }
+    ModelsUtil.Unloader.getDefault().unloadAdapters(_loadedResources);
     for (Resource loadedResource : _loadedResources) {
       unloadResource(loadedResource);
     }
     List<Resource> result = new ArrayList<Resource>(_loadedResources);
     _loadedResources.clear();
-    if (!result.isEmpty())
+    if (!result.isEmpty()) {
       _state = ScopeState.UNLOADED;
+    }
     return result;
   }
   
@@ -622,14 +629,7 @@ implements IFragmentedModelScope.Editable {
    * @param resource_p a non-null resource
    */
   protected void unloadResource(Resource resource_p) {
-    try {
-      if (resource_p.isLoaded()) // Actually loaded, not just assumed as such
-        resource_p.unload();
-      _resourceSet.getResources().remove(resource_p);
-    } catch (Exception e) {
-      // Proceed
-      e.printStackTrace();
-    }
+    ModelsUtil.Unloader.getDefault().unloadResource(resource_p);
   }
   
   

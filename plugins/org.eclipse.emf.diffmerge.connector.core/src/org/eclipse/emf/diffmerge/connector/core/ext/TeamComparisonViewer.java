@@ -1,9 +1,10 @@
 /**
- * Copyright (c) 2015-2017 Intel Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2015-2019 Intel Corporation and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Stephane Bouchet (Intel Corporation) - initial API and implementation
@@ -11,12 +12,15 @@
  */
 package org.eclipse.emf.diffmerge.connector.core.ext;
 
+import static org.eclipse.emf.diffmerge.ui.util.UIUtil.CC_MIRRORED_PROPERTY;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.CompareUI;
+import org.eclipse.compare.CompareViewerPane;
 import org.eclipse.compare.ICompareContainer;
 import org.eclipse.compare.INavigatable;
 import org.eclipse.compare.IPropertyChangeNotifier;
@@ -37,6 +41,7 @@ import org.eclipse.emf.diffmerge.ui.viewers.AbstractComparisonViewer;
 import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.diffmerge.ui.workbench.setup.ComparisonSetupManagerE3;
 import org.eclipse.emf.diffmerge.ui.workbench.setup.EMFDiffMergeEditorInput;
+import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.util.IPropertyChangeListener;
@@ -61,10 +66,6 @@ import org.eclipse.ui.IWorkbenchWindow;
  */
 public class TeamComparisonViewer extends Viewer implements IFlushable, IPropertyChangeNotifier {
   
-  /** The CompareConfiguration "mirrored" property defined in Neon and later,
-   * explicit here for compatibility with older versions of Eclipse */
-  protected static final String MIRRORED = "MIRRORED"; //$NON-NLS-1$
-  
   /** The non-null control of the viewer */
   protected final Composite _control;
   
@@ -88,6 +89,10 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    */
   public TeamComparisonViewer(Composite parent_p, CompareConfiguration configuration_p) {
     _configuration = configuration_p;
+    ToolBarManager manager = CompareViewerPane.getToolBarManager(parent_p);
+    if (manager != null) {
+      manager.removeAll(); // Remove text compare contributions to avoid side effects
+    }
     _control = createControl(parent_p);
     _pendingListeners = new HashSet<IPropertyChangeListener>();
     _innerViewer = null;
@@ -114,12 +119,13 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
         EMFDiffMergeCoreConnectorPlugin.getDefault().getWorkbench()
             .getActiveWorkbenchWindow();
     if (activeWorkbenchWindow != null) {
-      IWorkbenchPage page = activeWorkbenchWindow.getActivePage();
-      if (page != null) {
-        IEditorPart editor = page.getActiveEditor();
-        if (editor != null)
-          page.closeEditor(editor, false);
-      }
+        IWorkbenchPage page = activeWorkbenchWindow.getActivePage();
+        if (page != null) {
+          IEditorPart editor = page.getActiveEditor();
+          if (editor != null) {
+            page.closeEditor(editor, false);
+          }
+        }
     }
   }
   
@@ -127,23 +133,26 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    * Set the orientation parameters of the given comparison setup
    * @param setup_p a non-null comparison setup
    */
-  protected void configureOrientation(ComparisonSetup setup_p) {
-    // Check order and orientation
-    if (isLaterOnTheRight()) {
-      if (!laterMayBeOnTheRight(setup_p)) {
-        // Invert left and right
-        setup_p.swapScopeDefinitions(Role.REFERENCE, Role.TARGET);
-        if (_configuration != null) {
-          // Ensure consistency with text comparison
-          _configuration.setProperty(MIRRORED, Boolean.TRUE);
-        }
-      }
-    }
-    Role defaultLeft = getLeftRole();
-    setup_p.setTwoWayReferenceRole(defaultLeft.opposite()); // The default remote side in Eclipse
-    setup_p.setCanChangeTwoWayReferenceRole(false);
-    setup_p.setCanSwapScopeDefinitions(false);
-  }
+	protected void configureOrientation( ComparisonSetup setup_p ){
+		// Check order and orientation
+		if ( isLaterOnTheRight() ) {
+			if ( !laterMayBeOnTheRight( setup_p ) ) {
+				// Invert left and right
+				if ( _configuration != null ) {
+					// Ensure consistency with text comparison
+					_configuration.setProperty( CC_MIRRORED_PROPERTY, Boolean.TRUE );
+				}
+			}
+		}
+		Object mirroredProp = _configuration.getProperty( CC_MIRRORED_PROPERTY );
+		if ( mirroredProp instanceof Boolean && ((Boolean)mirroredProp).booleanValue() ) {
+			setup_p.swapLeftRole();
+		}
+		Role leftRole = setup_p.getLeftRole();
+		setup_p.setTwoWayReferenceRole( leftRole.opposite() ); // The default remote side in Eclipse
+		setup_p.setCanChangeTargetSide( false );
+		setup_p.setCanSwapScopeDefinitions( false );
+	}  
   
   /**
    * Create and return the control of this viewer in the context of the given parent composite
@@ -217,10 +226,11 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
   protected ComparisonSetup createSetup(ComparisonSetupManager manager_p,
       Object left_p, Object right_p, Object ancestor_p) {
     Object actualAncestor;
-    if (right_p != null && right_p.equals(ancestor_p))
+    if (right_p != null && right_p.equals(ancestor_p)) {
       actualAncestor = null; // Use a two-way reference role instead
-    else
+    } else {
       actualAncestor = ancestor_p;
+    }
     ComparisonSetup setup = manager_p.createComparisonSetup(left_p, right_p, actualAncestor);
     if (setup != null) {
       configureOrientation(setup);
@@ -240,8 +250,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    * @see org.eclipse.compare.contentmergeviewer.IFlushable#flush(org.eclipse.core.runtime.IProgressMonitor)
    */
   public void flush(IProgressMonitor monitor_p) {
-    if (_innerViewer != null)
+    if (_innerViewer != null) {
       _innerViewer.flush(monitor_p);
+  }
   }
   
   /**
@@ -264,12 +275,13 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    * Return the role for the left-hand side
    * @return a role which is TARGET or REFERENCE
    */
-  protected Role getLeftRole() {
-    Role result = EMFDiffMergeUIPlugin.getDefault().getDefaultLeftRole();
+  protected Role getLeftRole(ComparisonSetup setup_p) {
+    Role result = setup_p.getLeftRole();
     if (_configuration != null) {
-      Object mirrored = _configuration.getProperty(MIRRORED);
-      if (mirrored instanceof Boolean && ((Boolean)mirrored).booleanValue())
+      Object mirrored = _configuration.getProperty(CC_MIRRORED_PROPERTY);
+      if (mirrored instanceof Boolean && ((Boolean)mirrored).booleanValue()) {
         result = result.opposite();
+    }
     }
     return result;
   }
@@ -300,8 +312,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
         if (_configuration != null) {
           // Register container for action bars
           ICompareContainer compareContainer = _configuration.getContainer();
-          if (compareContainer != null)
+          if (compareContainer != null) {
             editorInput.setContainer(compareContainer);
+        }
         }
         try {
           // Compute comparison
@@ -329,8 +342,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
       // Success: remove previous viewer, create new viewer and set the input
       if (_innerViewer != null) {
         Control innerControl = _innerViewer.getControl();
-        if (innerControl != null && !innerControl.isDisposed())
+        if (innerControl != null && !innerControl.isDisposed()) {
           innerControl.dispose();
+      }
       }
       Control contents = editorInput_p.createContents(_control);
       GridData layoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -390,9 +404,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    * @param setup_p a non-null setup
    */
   protected boolean laterMayBeOnTheRight(ComparisonSetup setup_p) {
-    Role defaultLeft = getLeftRole();
-    IModelScopeDefinition leftScopeDef = setup_p.getScopeDefinition(defaultLeft);
-    IModelScopeDefinition rightScopeDef = setup_p.getScopeDefinition(defaultLeft.opposite());
+    Role leftRole = getLeftRole(setup_p);
+    IModelScopeDefinition leftScopeDef = setup_p.getScopeDefinition(leftRole);
+    IModelScopeDefinition rightScopeDef = setup_p.getScopeDefinition(leftRole.opposite());
     long leftTimestamp = leftScopeDef instanceof ITimestampProvider?
         ((ITimestampProvider)leftScopeDef).getTimestamp(): -1;
     long rightTimestamp = rightScopeDef instanceof ITimestampProvider?
@@ -413,8 +427,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    */
   @Override
   public void refresh() {
-    if (_innerViewer != null)
+    if (_innerViewer != null) {
       _innerViewer.refresh();
+  }
   }
   
   /**
@@ -429,8 +444,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
        */
       protected INavigatable getDelegate() {
         INavigatable navResult = null;
-        if (_innerViewer != null)
+        if (_innerViewer != null) {
           navResult = _innerViewer.getNavigatable();
+        }
         return navResult;
       }
       /**
@@ -445,8 +461,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
       public boolean hasChange(int changeFlag_p) {
         boolean result = false;
         INavigatable delegate = getDelegate();
-        if (delegate != null)
+        if (delegate != null) {
           result = delegate.hasChange(changeFlag_p);
+        }
         return result;
       }
       /**
@@ -455,8 +472,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
       public boolean openSelectedChange() {
         boolean result = false;
         INavigatable delegate = getDelegate();
-        if (delegate != null)
+        if (delegate != null) {
           result = delegate.openSelectedChange();
+        }
         return result;
       }
       /**
@@ -465,8 +483,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
       public boolean selectChange(int changeFlag_p) {
         boolean result = false;
         INavigatable delegate = getDelegate();
-        if (delegate != null)
+        if (delegate != null) {
           result = delegate.selectChange(changeFlag_p);
+        }
         return result;
       }
     };
@@ -491,13 +510,15 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    */
   @Override
   public void setInput(Object input_p) {
-    if (input_p == _input)
+    if (input_p == _input) {
       return;
+    }
     _input = input_p;
     if (input_p instanceof EMFDiffNode || input_p == null) {
       // Can be directly handled by inner viewer
-      if (_innerViewer != null)
+      if (_innerViewer != null) {
         _innerViewer.setInput(input_p);
+      }
     } else if (input_p instanceof ICompareInput) {
       handleCompareInput((ICompareInput)input_p);
     }
@@ -508,8 +529,9 @@ public class TeamComparisonViewer extends Viewer implements IFlushable, IPropert
    */
   @Override
   public void setSelection(ISelection selection_p, boolean reveal_p) {
-    if (_innerViewer != null)
+    if (_innerViewer != null) {
       _innerViewer.setSelection(selection_p, reveal_p);
+  }
   }
   
 }

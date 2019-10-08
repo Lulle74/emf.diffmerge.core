@@ -1,50 +1,63 @@
-/**
- * <copyright>
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
  *    Stephane Bouchet (Intel Corporation) - Bug #442492 : hide number of differences in the UI
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.eclipse.emf.diffmerge.ui.viewers.DefaultUserProperties.P_SUPPORT_UNDO_REDO;
+
+import java.util.Collection;
+import java.util.HashSet;
 
 import org.eclipse.compare.structuremergeviewer.DiffNode;
 import org.eclipse.compare.structuremergeviewer.Differencer;
+import org.eclipse.core.commands.operations.IOperationHistory;
+import org.eclipse.core.commands.operations.IOperationHistoryListener;
+import org.eclipse.core.commands.operations.IUndoContext;
+import org.eclipse.core.commands.operations.OperationHistoryEvent;
 import org.eclipse.emf.diffmerge.api.IComparison;
 import org.eclipse.emf.diffmerge.api.Role;
+import org.eclipse.emf.diffmerge.api.diff.IDifference;
+import org.eclipse.emf.diffmerge.api.diff.IReferenceValuePresence;
+import org.eclipse.emf.diffmerge.api.diff.IValuePresence;
+import org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope;
 import org.eclipse.emf.diffmerge.api.scopes.IFeaturedModelScope;
 import org.eclipse.emf.diffmerge.diffdata.EComparison;
 import org.eclipse.emf.diffmerge.diffdata.EMatch;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
-import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.DifferenceColorKind;
 import org.eclipse.emf.diffmerge.ui.diffuidata.UIComparison;
 import org.eclipse.emf.diffmerge.ui.diffuidata.impl.UIComparisonImpl;
 import org.eclipse.emf.diffmerge.ui.setup.ModelScopeTypedElement;
-import org.eclipse.emf.diffmerge.ui.util.UIUtil;
+import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod;
+import org.eclipse.emf.diffmerge.ui.util.CompositeUndoContext;
+import org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner;
+import org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier;
+import org.eclipse.emf.diffmerge.ui.util.UserPropertyOwner;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.domain.IEditingDomainProvider;
-import org.eclipse.emf.edit.provider.IDisposable;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
+import org.eclipse.emf.transaction.TransactionalEditingDomain;
+import org.eclipse.emf.workspace.IWorkspaceCommandStack;
+import org.eclipse.emf.workspace.ResourceUndoContext;
+import org.eclipse.jface.util.IPropertyChangeListener;
 
 
 /**
  * An ICompareInput that wraps a model comparison.
  * @author Olivier Constant
  */
-public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomainProvider {
+public class EMFDiffNode extends DiffNode implements IEditingDomainProvider,
+IUserPropertyOwner {
   
   /** The resource manager */
   private final ComparisonResourceManager _resourceManager;
@@ -55,7 +68,10 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   /** The optional editing domain */
   private final EditingDomain _editingDomain;
   
-  /** The role that drives the representation of the comparison */
+  /** The optional listener that reacts to changes on the editing domain */
+  protected IOperationHistoryListener _domainChangeListener;
+  
+  /** The non-null role that drives the representation of the comparison */
   private Role _drivingRole;
   
   /** The non-null role on the left-hand side */
@@ -66,12 +82,6 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   
   /** The non-null difference category manager */
   private final CategoryManager _categoryManager;
-  
-  /** Whether to use custom icons for differences */
-  private boolean _useCustomIcons;
-  
-  /** Whether to use custom labels for differences */
-  private boolean _useCustomLabels;
   
   /** Whether the left model is editable */
   private boolean _isTargetEditable;
@@ -91,29 +101,8 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   /** Whether the right model has been modified */
   private boolean _isReferenceModified;
   
-  /** Whether differences number must be hidden */
-  private boolean _isHideDifferenceNumbers;
-  
-  /** Whether an impact dialog must be shown at merge time */
-  private boolean _isShowMergeImpact;
-  
-  /** Whether to support undo/redo (cost in memory usage and response time) */
-  private boolean _isUndoRedoSupported;
-  
-  /** Whether events must be logged */
-  private boolean _isLogEvents;
-  
-  /** The default value for the "cover children" property as proposed to the user when merging */
-  private boolean _defaultCoverChildren;
-  
-  /** The default value for the "incremental mode" property as proposed to the user when merging */
-  private boolean _defaultIncrementalMode;
-  
-  /** The default value for "show merge impact" property as proposed to the user when merging */
-  private boolean _defaultShowMergeImpact;
-  
-  /** A map from color kind to SWT color code from the SWT class */
-  private final Map<DifferenceColorKind, Integer> _differenceColors;
+  /** The user property owner for delegation */
+  private final IUserPropertyOwner _userPropertyOwnerDelegate;
   
   
   /**
@@ -142,152 +131,121 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
    */
   public EMFDiffNode(EComparison comparison_p, EditingDomain domain_p,
       boolean isLeftEditionPossible_p, boolean isRightEditionPossible_p) {
+    this(comparison_p, domain_p, isLeftEditionPossible_p, isRightEditionPossible_p,
+        EMFDiffMergeUIPlugin.getDefault().getDefaultLeftRole());
+  }
+  
+  /**
+   * Constructor
+   * @param comparison_p a non-null comparison
+   * @param domain_p the optional editing domain for undo/redo
+   * @param isLeftEditionPossible_p whether edition on the left is possible at all
+   * @param isRightEditionPossible_p whether edition on the right is possible at all
+   * @param leftRole_p the non-null role on the left-hand side
+   */
+  public EMFDiffNode(EComparison comparison_p, EditingDomain domain_p,
+      boolean isLeftEditionPossible_p, boolean isRightEditionPossible_p,
+      Role leftRole_p) {
     super(
         Differencer.CHANGE,
         comparison_p.isThreeWay()? new ModelScopeTypedElement(
             comparison_p.getScope(Role.ANCESTOR)): null,
-        new ModelScopeTypedElement(comparison_p.getScope(Role.TARGET)),
-        new ModelScopeTypedElement(comparison_p.getScope(Role.REFERENCE)));
+        new ModelScopeTypedElement(comparison_p.getScope(leftRole_p)),
+        new ModelScopeTypedElement(comparison_p.getScope(leftRole_p.opposite())));
     _resourceManager = new ComparisonResourceManager();
-    _contents = new UIComparisonImpl(comparison_p);
+    _contents = createContents(comparison_p);
     _editingDomain = domain_p;
-    _leftRole = EMFDiffMergeUIPlugin.getDefault().getDefaultLeftRole();
-    _drivingRole = _leftRole;
+    _leftRole = leftRole_p;
     _twoWayReferenceRole = null;
     _categoryManager = new CategoryManager(this);
-    _differenceColors = new HashMap<EMFDiffMergeUIPlugin.DifferenceColorKind, Integer>();
-    initializeDifferenceColors(_differenceColors);
-    _useCustomIcons = true;
-    _useCustomLabels = false;
-    _isTargetEditionPossible = isLeftEditionPossible_p;
-    _isReferenceEditionPossible = isRightEditionPossible_p;
+    _isTargetEditionPossible = (leftRole_p == Role.TARGET)? isLeftEditionPossible_p:
+      isRightEditionPossible_p;
+    _isReferenceEditionPossible = (leftRole_p == Role.TARGET)? isRightEditionPossible_p:
+      isLeftEditionPossible_p;
     _isTargetEditable = true;
     _isReferenceEditable = true;
     _isTargetModified = false;
     _isReferenceModified = false;
-    _isHideDifferenceNumbers = false;
-    _isShowMergeImpact = true;
-    _isUndoRedoSupported = _editingDomain != null;
-    _isLogEvents = false;
-    _defaultShowMergeImpact = _isShowMergeImpact;
-    _defaultCoverChildren = true;
-    _defaultIncrementalMode = false;
+    _drivingRole = getTargetRole() != null? getTargetRole(): _leftRole;
+    _domainChangeListener = (domain_p == null)? null: createDomainListener(domain_p);
+    _userPropertyOwnerDelegate = new UserPropertyOwner();
   }
   
   /**
-   * Initialize the given map from color kinds to SWT color codes
-   * @param differenceColorsMap_p a non-null, modifiable map
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#addUserProperty(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier, java.lang.Object)
    */
-  protected void initializeDifferenceColors(
-      Map<DifferenceColorKind, Integer> differenceColorsMap_p) {
-    differenceColorsMap_p.put(DifferenceColorKind.LEFT, Integer.valueOf(SWT.COLOR_DARK_RED));
-    differenceColorsMap_p.put(DifferenceColorKind.RIGHT, Integer.valueOf(SWT.COLOR_BLUE));
-    differenceColorsMap_p.put(DifferenceColorKind.BOTH, Integer.valueOf(SWT.COLOR_DARK_MAGENTA));
-    differenceColorsMap_p.put(DifferenceColorKind.NONE, Integer.valueOf(SWT.COLOR_GRAY));
-    differenceColorsMap_p.put(DifferenceColorKind.CONFLICT, Integer.valueOf(SWT.COLOR_RED));
-    differenceColorsMap_p.put(DifferenceColorKind.DEFAULT, Integer.valueOf(SWT.COLOR_BLACK));
+  public <T> boolean addUserProperty(Identifier<T> id_p, T initialValue_p) {
+    return getUserPropertyOwnerDelegate().addUserProperty(id_p, initialValue_p);
   }
   
   /**
-   * Return whether edition of the given side is enabled
-   * @param left_p whether the side is left or right
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#addUserPropertyChangeListener(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier, org.eclipse.jface.util.IPropertyChangeListener)
    */
-  public boolean isEditable(boolean left_p) {
-    boolean result = isEditionPossible(left_p);
-    if (result) {
-      if (getRoleForSide(left_p) == Role.TARGET) {
-        result = _isTargetEditable;
-      } else {
-        result = _isReferenceEditable;
+  public boolean addUserPropertyChangeListener(Identifier<?> id_p,
+      IPropertyChangeListener listener_p) {
+    return getUserPropertyOwnerDelegate().addUserPropertyChangeListener(id_p, listener_p);
       }
-    }
-    return result;
+  
+  /**
+   * Create and return the UI comparison contents of this node
+   * @param comparison_p a non-null comparison
+   * @return a non-null UI comparison
+   */
+  protected UIComparison createContents(EComparison comparison_p) {
+    return new UIComparisonImpl(comparison_p);
   }
   
   /**
-   * Return whether editing the scope of the given side is possible at all
-   * @param left_p whether the side is left or right
+   * Create and return a listener for the given editing domain that ensures
+   * this node is kept in sync, if possible, otherwise return null
+   * @param domain_p a non-null editing domain
+   * @return a potentially null object
    */
-  public boolean isEditionPossible(boolean left_p) {
-    return getRoleForSide(left_p) == Role.TARGET? _isTargetEditionPossible:
-      _isReferenceEditionPossible;
-  }
-  
+  protected IOperationHistoryListener createDomainListener(EditingDomain domain_p) {
+    IOperationHistoryListener result = null;
+    if (domain_p.getCommandStack() instanceof IWorkspaceCommandStack) {
+      IOperationHistory opHistory =
+          ((IWorkspaceCommandStack)domain_p.getCommandStack()).getOperationHistory();
+      result = new IOperationHistoryListener() {
   /**
-   * Return whether the given side has been modified
-   * @param left_p whether the side is left or right
+         * @see org.eclipse.core.commands.operations.IOperationHistoryListener#historyNotification(org.eclipse.core.commands.operations.OperationHistoryEvent)
    */
-  public boolean isModified(boolean left_p) {
-    return getRoleForSide(left_p) == Role.TARGET? _isTargetModified:
-      _isReferenceModified;
+        public void historyNotification(OperationHistoryEvent event_p) {
+          IUndoContext undoContext = getUndoContext();
+          if (undoContext != null && event_p.getOperation().hasContext(undoContext)) {
+            switch (event_p.getEventType()) {
+            case OperationHistoryEvent.OPERATION_ADDED:
+            case OperationHistoryEvent.REDONE:
+            case OperationHistoryEvent.UNDONE:
+              updateDifferenceNumbers();
+              break;
+            default: // Ignore
   }
-  
-  /**
-   * Return whether an impact dialog must be shown at merge time
-   */
-  public boolean isShowMergeImpact() {
-    return _isShowMergeImpact;
   }
-  
-  /**
-   * Return whether to support undo/redo (cost in memory usage and response time)
-   */
-  public boolean isUndoRedoSupported() {
-    return _isUndoRedoSupported;
   }
-  
-  /**
-   * Return whether events must be logged
-   */
-  public boolean isLogEvents() {
-    return _isLogEvents;
-  }
-  
-  /**
-   * Return whether the given structural feature must be considered as a containment
-   * @param feature_p a potentially null feature
-   */
-  public boolean isContainment(EStructuralFeature feature_p) {
-    boolean result = false;
-    if (feature_p instanceof EReference) {
-      EReference reference = (EReference)feature_p;
-      IComparison comparison = getActualComparison();
-      if (comparison != null) {
-        IFeaturedModelScope scope = comparison.getScope(getDrivingRole());
-        result = scope.isContainment(reference);
-      } else {
-        result = reference.isContainment();
+      };
+      opHistory.addOperationHistoryListener(result);
       }
-    }
     return result;
-  }
-  
-  /**
-   * Return the default value for the "cover children" property as proposed to the user when merging 
-   */
-  public boolean isDefaultCoverChildren() {
-    return _defaultCoverChildren;
-  }
-  
-  /**
-   * Return the default value for the "incremental mode" property as proposed to the user when merging 
-   */
-  public boolean isDefaultIncrementalMode() {
-    return _defaultIncrementalMode;
-  }
-  
-  /**
-   * Return the default value for the "show merge impact" property as proposed to the user when merging 
-   */
-  public boolean isDefaultShowImpact() {
-    return _defaultShowMergeImpact;
   }
   
   /**
    * @see org.eclipse.emf.edit.provider.IDisposable#dispose()
    */
   public void dispose() {
+    // Resource manager
     _resourceManager.dispose();
+    // User properties
+    getUserPropertyOwnerDelegate().dispose();
+    // Command stack
+    EditingDomain domain = getEditingDomain();
+    if (domain != null && _domainChangeListener != null) {
+      IOperationHistory opHistory =
+          ((IWorkspaceCommandStack)domain.getCommandStack()).getOperationHistory();
+      opHistory.removeOperationHistoryListener(_domainChangeListener);
+      _domainChangeListener = null;
+    }
+    // Input
   }
   
   /**
@@ -327,19 +285,6 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   }
   
   /**
-   * Return the color that corresponds to the given color kind
-   * @param colorKind_p a non-null color kind
-   * @return a non-null color
-   */
-  public Color getDifferenceColor(DifferenceColorKind colorKind_p) {
-    int colorCode = SWT.COLOR_BLACK;
-    Integer colorCodeI = _differenceColors.get(colorKind_p);
-    if (colorCodeI != null)
-      colorCode = colorCodeI.intValue();
-    return UIUtil.getColor(colorCode);
-  }
-  
-  /**
    * Return the role that drives the representation of the model comparison
    * @return a non-null role which is TARGET or REFERENCE
    */
@@ -357,11 +302,7 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   
   /**
    * Return the role which is used as the reference role, if any.
-   * The reference role determines that all differences should be represented
-   * in a way which is relative to it. In a three-way comparison, it is always
-   * ANCESTOR. In a two-way comparison, it can naturally be REFERENCE but it
-   * does not have to. If null, then both sides in the two-way comparison
-   * are represented in a symmetric way.
+   * @see IComparisonMethod#setTwoWayReferenceRole(Role)
    * @return ANCESTOR, TARGET, REFERENCE, or null
    */
   public Role getReferenceRole() {
@@ -388,11 +329,90 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   }
   
   /**
+   * Return the scope o the given side
+   * @param left_p whether the side is left or right
+   * @return a non-null scope, unless the UI comparison has been disposed
+   */
+  public IEditableModelScope getScope(boolean left_p) {
+    EComparison comparison = getActualComparison();
+    return comparison != null?
+        comparison.getScope(getRoleForSide(left_p)): null;
+  }
+  
+  /**
+   * Return the target role of the merge, if defined
+   * @return a potentially null role
+   */
+  public Role getTargetRole() {
+    Role result = null;
+    boolean leftEditable = isEditable(true);
+    boolean rightEditable = isEditable(false);
+    if (leftEditable && !rightEditable) {
+      result = getRoleForSide(true);
+    } else if (!leftEditable && rightEditable) {
+      result = getRoleForSide(false);
+    }
+    return result;
+  }
+  
+  /**
    * Return the UI comparison of this node
    * @return a non-null UI comparison
    */
   public UIComparison getUIComparison() {
     return _contents;
+  }
+  
+  /**
+   * Return the undo context for this node, if applicable.
+   * Class invariant: getUndoContext() == null || isReactive()
+   * @return a potentially null undo context
+   */
+  public IUndoContext getUndoContext() {
+    IUndoContext result = null;
+    if (isReactive()) {
+      Collection<IUndoContext> contexts = new HashSet<IUndoContext>();
+      // isReactive() implies that the editing domain is non-null and its command stack is a
+      // IWorkspaceCommandStack, which implies that the editing domain is a TransactionalEditingDomain
+      TransactionalEditingDomain tDomain = (TransactionalEditingDomain)getEditingDomain();
+      IWorkspaceCommandStack cmdStack = (IWorkspaceCommandStack)tDomain.getCommandStack();
+      IUndoContext defaultContext = cmdStack.getDefaultUndoContext();
+      if (defaultContext != null) {
+        contexts.add(defaultContext);
+      }
+      Resource uiResource = getUIComparison().eResource();
+      if (uiResource != null) {
+        contexts.add(new ResourceUndoContext(tDomain, uiResource));
+      }
+      Resource coreResource = getActualComparison().eResource();
+      if (coreResource != null) {
+        contexts.add(new ResourceUndoContext(tDomain, coreResource));
+      }
+      result = new CompositeUndoContext(contexts);
+    }
+    return result;
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#getUserProperties()
+   */
+  public Collection<Identifier<?>> getUserProperties() {
+    return getUserPropertyOwnerDelegate().getUserProperties();
+  }
+  
+  /**
+   * Return the delegate user property owner
+   * @return a non-null object
+   */
+  protected IUserPropertyOwner getUserPropertyOwnerDelegate() {
+    return _userPropertyOwnerDelegate;
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#getUserPropertyValue(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier)
+   */
+  public <T> T getUserPropertyValue(Identifier<T> id_p) {
+    return getUserPropertyOwnerDelegate().getUserPropertyValue(id_p);
   }
   
   /**
@@ -406,6 +426,97 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   }
   
   /**
+   * Return whether this node is able to react to changes
+   */
+  public boolean isReactive() {
+    boolean result = _domainChangeListener != null;
+    if (result) {
+      Resource mainResource = getUIComparison().eResource();
+      result = mainResource != null &&
+          getEditingDomain().getResourceSet().getResources().contains(mainResource);
+    }
+    return result;
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#hasUserProperty(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier)
+   */
+  public boolean hasUserProperty(Identifier<?> id_p) {
+    return getUserPropertyOwnerDelegate().hasUserProperty(id_p);
+  }
+  
+  /**
+   * Silently mark the given set of differences as ignored
+   * @param differences_p a non-null, potentially empty collection
+   */
+  public void ignore(Collection<? extends IDifference> differences_p) {
+    for (IDifference difference : differences_p) {
+      if (difference instanceof IDifference.Editable) {
+        ((IDifference.Editable)difference).setIgnored(true);
+        // Also on symmetrical if any
+        if (difference instanceof IValuePresence) {
+          IValuePresence symmetrical = ((IValuePresence)difference).getSymmetrical();
+          if (symmetrical instanceof IDifference.Editable) {
+            ((IDifference.Editable)symmetrical).setIgnored(true);
+          }
+          // Also on symmetrical ownership if any
+          if (difference instanceof IReferenceValuePresence) {
+            IReferenceValuePresence symmetricalOwnership =
+                ((IReferenceValuePresence)difference).getSymmetricalOwnership();
+            if (symmetricalOwnership instanceof IDifference.Editable) {
+              ((IDifference.Editable)symmetricalOwnership).setIgnored(true);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  /**
+   * Return whether the given structural feature must be considered as a containment
+   * @param feature_p a potentially null feature
+   */
+  public boolean isContainment(EStructuralFeature feature_p) {
+    boolean result = false;
+    if (feature_p instanceof EReference) {
+      EReference reference = (EReference)feature_p;
+      IComparison comparison = getActualComparison();
+      if (comparison != null) {
+        IFeaturedModelScope scope = comparison.getScope(getDrivingRole());
+        result = scope.isContainment(reference);
+      } else {
+        result = reference.isContainment();
+      }
+    }
+    return result;
+  }
+  
+  /**
+   * Return whether edition of the given side is enabled
+   * @param left_p whether the side is left or right
+   */
+  public boolean isEditable(boolean left_p) {
+    boolean result = isEditionPossible(left_p);
+    if (result) {
+      if (getRoleForSide(left_p) == Role.TARGET) {
+        result = _isTargetEditable;
+      } else {
+        result = _isReferenceEditable;
+      }
+    }
+    return result;
+  }
+  
+  /**
+   * Return whether editing the scope of the given side is possible at all
+   * @param left_p whether the side is left or right
+   */
+  public boolean isEditionPossible(boolean left_p) {
+    return getRoleForSide(left_p) == Role.TARGET? _isTargetEditionPossible:
+      _isReferenceEditionPossible;
+  }
+  
+  /**
    * Return whether the are still differences that the user has to handle
    */
   public boolean isEmpty() {
@@ -413,10 +524,12 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   }
   
   /**
-   * Return whether this viewer displays difference numbers
+   * Return whether the given side has been modified
+   * @param left_p whether the side is left or right
    */
-  public boolean isHideDifferenceNumbers() {
-    return _isHideDifferenceNumbers;
+  public boolean isModified(boolean left_p) {
+    return getRoleForSide(left_p) == Role.TARGET? _isTargetModified:
+      _isReferenceModified;
   }
   
   /**
@@ -428,33 +541,47 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   }
   
   /**
-   * Set the default value for the "cover children" property as proposed to the user when merging 
+   * Return whether to support undo/redo (cost in memory usage and response time)
    */
-  public void setDefaultCoverChildren(boolean coverChildren_p) {
-    _defaultCoverChildren = coverChildren_p;
+  public boolean isUndoRedoSupported() {
+    return getEditingDomain() != null && (!hasUserProperty(P_SUPPORT_UNDO_REDO) ||
+        isUserPropertyTrue(P_SUPPORT_UNDO_REDO));
   }
   
   /**
-   * Set the default value for the "incremental mode" property as proposed to the user when merging 
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#isUserPropertyFalse(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier)
    */
-  public void setDefaultIncrementalMode(boolean isIncrementalMode_p) {
-    _defaultIncrementalMode = isIncrementalMode_p;
+  public boolean isUserPropertyFalse(Identifier<Boolean> id_p) {
+    return getUserPropertyOwnerDelegate().isUserPropertyFalse(id_p);
   }
   
   /**
-   * Set the default value for the "show merge impact" property as proposed to the user when merging 
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#isUserPropertyTrue(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier)
    */
-  public void setDefaultShowImpact(boolean showImpact_p) {
-    _defaultShowMergeImpact = showImpact_p;
+  public boolean isUserPropertyTrue(Identifier<Boolean> id_p) {
+    return getUserPropertyOwnerDelegate().isUserPropertyTrue(id_p);
   }
   
   /**
-   * Set the color that corresponds to the given color kind
-   * @param colorKind_p a non-null color kind
-   * @param swtColor_p an identifier of an SWT color from class SWT
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#removeUserProperty(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier)
    */
-  public void setDifferenceColor(DifferenceColorKind colorKind_p, int swtColor_p) {
-    _differenceColors.put(colorKind_p, new Integer(swtColor_p));
+  public boolean removeUserProperty(Identifier<?> id_p) {
+    return getUserPropertyOwnerDelegate().removeUserProperty(id_p);
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#removeUserPropertyChangeListener(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier, org.eclipse.jface.util.IPropertyChangeListener)
+   */
+  public boolean removeUserPropertyChangeListener(Identifier<?> id_p,
+      IPropertyChangeListener listener_p) {
+    return getUserPropertyOwnerDelegate().removeUserPropertyChangeListener(id_p, listener_p);
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#removeUserPropertyChangeListener(org.eclipse.jface.util.IPropertyChangeListener)
+   */
+  public void removeUserPropertyChangeListener(IPropertyChangeListener listener_p) {
+    getUserPropertyOwnerDelegate().removeUserPropertyChangeListener(listener_p);
   }
   
   /**
@@ -462,8 +589,9 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
    * @param drivingRole_p a non-null role which is TARGET or REFERENCE
    */
   public void setDrivingRole(Role drivingRole_p) {
-    if (Role.TARGET == drivingRole_p || Role.REFERENCE == drivingRole_p)
+    if (Role.TARGET == drivingRole_p || Role.REFERENCE == drivingRole_p) {
       _drivingRole = drivingRole_p;
+  }
   }
   
   /**
@@ -494,26 +622,12 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   }
   
   /**
-   * Set whether this viewer should display differences numbers
-   */
-  public void setHideDifferenceNumbers(boolean hideDifferenceNumbers_p) {
-    _isHideDifferenceNumbers = hideDifferenceNumbers_p;
-  }
-  
-  /**
    * Set the role on the left-hand side
    * @param leftRole_p a non-null role which is TARGET or REFERENCE
    */
   public void setLeftRole(Role leftRole_p) {
     if (Role.TARGET == leftRole_p || Role.REFERENCE == leftRole_p)
       _leftRole = leftRole_p;
-  }
-  
-  /**
-   * Set whether events must be logged
-   */
-  public void setLogEvents(boolean logEvents_p) {
-    _isLogEvents = logEvents_p;
   }
   
   /**
@@ -531,55 +645,27 @@ public class EMFDiffNode extends DiffNode implements IDisposable, IEditingDomain
   /**
    * Set the role which is used as the reference role.
    * In a three-way comparison, this operation has no effect.
-   * @see EMFDiffNode#getReferenceRole()
+   * @see IComparisonMethod#setTwoWayReferenceRole(Role)
    * @param role_p TARGET, REFERENCE, or null
    */
   public void setReferenceRole(Role role_p) {
-    if (!isThreeWay())
+    if (!isThreeWay()) {
       _twoWayReferenceRole = role_p;
   }
-  
-  /**
-   * Set whether an impact dialog must be shown at merge time
-   */
-  public void setShowMergeImpact(boolean showMergeImpact_p) {
-    _isShowMergeImpact = showMergeImpact_p;
   }
   
   /**
-   * Set whether to support undo/redo (cost in memory usage and response time).
-   * Undo/redo may only be supported if the editing domain is known (see getEditingDomain()).
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#setUserPropertyValue(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier, java.lang.Object)
    */
-  public void setUndoRedoSupported(boolean supportUndoRedo_p) {
-    _isUndoRedoSupported = getEditingDomain() != null && supportUndoRedo_p;
+  public <T> boolean setUserPropertyValue(Identifier<T> id_p, T newValue_p) {
+    return getUserPropertyOwnerDelegate().setUserPropertyValue(id_p, newValue_p);
   }
   
   /**
-   * Set whether this viewer should use custom icons to represent differences
+   * @see org.eclipse.emf.diffmerge.ui.util.IUserPropertyOwner#setUserPropertyValue(org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier, boolean)
    */
-  public void setUseCustomIcons(boolean useCustom_p) {
-    _useCustomIcons = useCustom_p;
-  }
-  
-  /**
-   * Set whether this viewer should use custom labels to represent differences
-   */
-  public void setUseCustomLabels(boolean useCustom_p) {
-    _useCustomLabels = useCustom_p;
-  }
-  
-  /**
-   * Return whether this viewer uses custom icons to represent differences
-   */
-  public boolean usesCustomIcons() {
-    return _useCustomIcons;
-  }
-  
-  /**
-   * Return whether this viewer uses custom labels to represent differences
-   */
-  public boolean usesCustomLabels() {
-    return _useCustomLabels;
+  public boolean setUserPropertyValue(Identifier<Boolean> id_p, boolean newValue_p) {
+    return getUserPropertyOwnerDelegate().setUserPropertyValue(id_p, newValue_p);
   }
   
   /**

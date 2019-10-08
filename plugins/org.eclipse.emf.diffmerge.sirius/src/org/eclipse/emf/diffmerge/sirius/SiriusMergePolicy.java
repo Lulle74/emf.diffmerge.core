@@ -1,29 +1,26 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2006-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2006-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.sirius;
 
 import java.util.Set;
 
 import org.eclipse.emf.diffmerge.api.scopes.IFeaturedModelScope;
+import org.eclipse.emf.diffmerge.api.scopes.IPersistentModelScope;
 import org.eclipse.emf.diffmerge.gmf.GMFMergePolicy;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.ECrossReferenceAdapter;
 import org.eclipse.sirius.diagram.DDiagramElement;
-import org.eclipse.sirius.viewpoint.DAnalysis;
 import org.eclipse.sirius.viewpoint.DRepresentation;
 import org.eclipse.sirius.viewpoint.DRepresentationDescriptor;
 import org.eclipse.sirius.viewpoint.DView;
@@ -77,9 +74,16 @@ public class SiriusMergePolicy extends GMFMergePolicy {
         }
       }
     } else if (container == null) {
-      DRepresentationDescriptor descriptor = getDescriptor(element_p, scope_p);
-      if (descriptor != null)
+      DRepresentationDescriptor descriptor = null;
+      if (scope_p instanceof SiriusScope) {
+        descriptor = ((SiriusScope)scope_p).getRepresentationDescriptor(element_p);
+      } else if (scope_p instanceof IPersistentModelScope) {
+        descriptor = SiriusScope.getRepresentationDescriptorByPhysicalExploration(
+            element_p, (IPersistentModelScope)scope_p);
+      }
+      if (descriptor != null) {
         group_p.add(descriptor);
+      }
     }
   }
   
@@ -95,14 +99,17 @@ public class SiriusMergePolicy extends GMFMergePolicy {
     // Semantic element -> DSemanticDecorators
     extendSemanticElementAdditionGroup(group_p, element_p, scope_p);
     // Sirius 4.1: Retrieve the diagram while merging the descriptor
-    if (element_p instanceof DRepresentationDescriptor)
+    if (element_p instanceof DRepresentationDescriptor) {
       extendDescriptorAdditionGroup(group_p, (DRepresentationDescriptor)element_p, scope_p);
+    }
     // Sirius 4.1: Retrieve the descriptor while merging the diagram
-    if (element_p instanceof DRepresentation)
+    if (element_p instanceof DRepresentation) {
       extendDRepresentationAdditionGroup(group_p, (DRepresentation)element_p, scope_p);
+    }
     // Sirius/GMF consistency: GMF driven by Sirius
-    if (element_p instanceof DDiagramElement)
+    if (element_p instanceof DDiagramElement) {
       extendGMFAdditionGroupSemanticTarget(group_p, element_p, scope_p);
+    }
   }
   
   /**
@@ -120,8 +127,9 @@ public class SiriusMergePolicy extends GMFMergePolicy {
         for (EStructuralFeature.Setting setting :
             crAdapter.getNonNavigableInverseReferences(element_p, false)) {
           if (setting.getEStructuralFeature() ==
-              ViewpointPackage.eINSTANCE.getDSemanticDecorator_Target())
+              ViewpointPackage.eINSTANCE.getDSemanticDecorator_Target()) {
             group_p.add(setting.getEObject());
+          }
         }
       }
     }
@@ -135,27 +143,6 @@ public class SiriusMergePolicy extends GMFMergePolicy {
     Set<EObject> result = super.getAdditionGroup(element_p, scope_p);
     extendSiriusAdditionGroup(result, element_p, scope_p);
     return result;
-  }
-  
-  /**
-   * Return the descriptor for the given representation within the given scope, if any
-   * @param representation_p a non-null representation
-   * @param scope_p a non-null scope
-   * @return a potentially null descriptor
-   */
-  protected DRepresentationDescriptor getDescriptor(
-      DRepresentation representation_p, IFeaturedModelScope scope_p) {
-    for (EObject root : scope_p.getContents()) {
-      if (root instanceof DAnalysis) {
-        for (DView view : ((DAnalysis)root).getOwnedViews()) {
-          for (DRepresentationDescriptor descriptor : view.getOwnedRepresentationDescriptors()) {
-            if (descriptor.getRepresentation() == representation_p)
-              return descriptor;
-          }
-        }
-      }
-    }
-    return null;
   }
   
   /**

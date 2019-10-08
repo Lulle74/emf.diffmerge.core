@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.gmf;
 
 import java.util.Collection;
@@ -60,6 +57,26 @@ public class GMFScope extends FragmentedModelScope {
    */
   public GMFScope(URI uri_p, ResourceSet resourceSet_p, boolean readOnly_p) {
     super(uri_p, resourceSet_p, readOnly_p);
+  }
+  
+  /**
+   * Constructor
+   * @param uris_p a non-null collection of URIs of resources to load as roots
+   * @param editingDomain_p a non-null editing domain that encompasses the scope
+   * @param readOnly_p whether the scope should be read-only, if supported
+   */
+  public GMFScope(Collection<URI> uris_p, EditingDomain editingDomain_p, boolean readOnly_p) {
+    super(uris_p, editingDomain_p, readOnly_p);
+  }
+  
+  /**
+   * Constructor
+   * @param uris_p a non-null collection of URIs of resources to load as roots
+   * @param resourceSet_p a non-null resource set where the resources must be loaded
+   * @param readOnly_p whether the scope is in read-only mode, if applicable
+   */
+  public GMFScope(Collection<URI> uris_p, ResourceSet resourceSet_p, boolean readOnly_p) {
+    super(uris_p, resourceSet_p, readOnly_p);
   }
   
   /**

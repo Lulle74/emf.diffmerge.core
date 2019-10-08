@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.api;
 
 import java.util.Collection;
@@ -251,10 +248,12 @@ public interface IComparison {
      * @see org.eclipse.emf.diffmerge.api.IComparison#getMapping()
      */
     IMapping.Editable getMapping();
+    
     /**
      * @see org.eclipse.emf.diffmerge.api.IComparison#getScope(org.eclipse.emf.diffmerge.api.Role)
      */
     IEditableModelScope getScope(Role role_p);
+    
     /**
      * Create and return an attribute value presence with the given characteristics
      * @param elementMatch_p the non-null match for the element holding the value
@@ -299,6 +298,14 @@ public interface IComparison {
     IReferenceValuePresence newReferenceValuePresence(
         IMatch elementMatch_p, EReference reference_p, EObject value_p, IMatch valueMatch_p,
         Role presenceRole_p, boolean isOrder_p);
+    
+    /**
+     * Swap the TARGET and REFERENCE scopes.
+     * This operation succeeds if and only if the comparison is empty:
+     * it has not been computed yet or it has been cleared.
+     * @return whether the operation succeeded
+     */
+    boolean swapScopes();
   }
   
 }

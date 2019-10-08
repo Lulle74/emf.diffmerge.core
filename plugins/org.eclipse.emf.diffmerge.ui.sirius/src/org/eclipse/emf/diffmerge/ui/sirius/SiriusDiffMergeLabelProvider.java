@@ -1,23 +1,21 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2006-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.sirius;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.diffmerge.ui.gmf.GMFDiffMergeLabelProvider;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.sirius.common.tools.api.util.MessageTranslator;
 import org.eclipse.sirius.diagram.ContainerStyle;
 import org.eclipse.sirius.diagram.DiagramPackage;
 import org.eclipse.sirius.diagram.EdgeStyle;
@@ -45,8 +43,9 @@ public class SiriusDiffMergeLabelProvider extends GMFDiffMergeLabelProvider {
    * @return a non-null object
    */
   public static SiriusDiffMergeLabelProvider getInstance() {
-    if (__instance == null)
+    if (__instance == null) {
       __instance = new SiriusDiffMergeLabelProvider();
+    }
     return __instance;
   }
   
@@ -75,8 +74,9 @@ public class SiriusDiffMergeLabelProvider extends GMFDiffMergeLabelProvider {
   protected String getDAnalysisText(DAnalysis element_p) {
     String result = null;
     Resource resource = element_p.eResource();
-    if (resource != null && resource.getURI() != null)
+    if (resource != null && resource.getURI() != null) {
       result = URI.decode(resource.getURI().lastSegment());
+    }
     return result;
   }
   
@@ -113,9 +113,10 @@ public class SiriusDiffMergeLabelProvider extends GMFDiffMergeLabelProvider {
     String result = null;
     Viewpoint viewpoint = element_p.getViewpoint();
     if (viewpoint != null) {
-      result = viewpoint.getLabel();
-      if (result == null)
+      result = MessageTranslator.INSTANCE.getMessage(viewpoint, viewpoint.getLabel());
+      if (result == null) {
         result = viewpoint.getName();
+      }
     }
     return result;
   }
@@ -172,8 +173,9 @@ public class SiriusDiffMergeLabelProvider extends GMFDiffMergeLabelProvider {
     } else if (element_p instanceof RGBValues) {
       result = getRGBValuesText((RGBValues)element_p);
     }
-    if (result == null)
+    if (result == null) {
       result = super.getText(element_p);
+    }
     return result;
   }
   

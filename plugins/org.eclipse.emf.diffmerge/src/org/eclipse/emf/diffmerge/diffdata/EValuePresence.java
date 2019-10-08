@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata;
 
 import org.eclipse.emf.diffmerge.api.diff.IValuePresence;
@@ -24,18 +21,18 @@ import org.eclipse.emf.ecore.EStructuralFeature;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EValuePresence#getFeature <em>Feature</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EValuePresence#isOrder <em>Order</em>}</li>
  * </ul>
- * </p>
  *
  * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEValuePresence()
  * @model abstract="true" superTypes="org.eclipse.emf.diffmerge.diffdata.EElementRelativePresence org.eclipse.emf.diffmerge.diffdata.IValuePresence"
  * @generated
  */
-public interface EValuePresence extends EElementRelativePresence,
-    IValuePresence {
+public interface EValuePresence
+    extends EElementRelativePresence, IValuePresence {
   /**
    * Returns the value of the '<em><b>Feature</b></em>' reference.
    * <!-- begin-user-doc -->
@@ -45,11 +42,22 @@ public interface EValuePresence extends EElementRelativePresence,
    * </p>
    * <!-- end-user-doc -->
    * @return the value of the '<em>Feature</em>' reference.
+   * @see #setFeature(EStructuralFeature)
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEValuePresence_Feature()
-   * @model required="true" changeable="false"
+   * @model required="true"
    * @generated
    */
   EStructuralFeature getFeature();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EValuePresence#getFeature <em>Feature</em>}' reference.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Feature</em>' reference.
+   * @see #getFeature()
+   * @generated
+   */
+  void setFeature(EStructuralFeature value);
 
   /**
    * Returns the value of the '<em><b>Order</b></em>' attribute.
@@ -61,10 +69,21 @@ public interface EValuePresence extends EElementRelativePresence,
    * </p>
    * <!-- end-user-doc -->
    * @return the value of the '<em>Order</em>' attribute.
+   * @see #setOrder(boolean)
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEValuePresence_Order()
-   * @model default="false" required="true" changeable="false"
+   * @model default="false" required="true"
    * @generated
    */
   boolean isOrder();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EValuePresence#isOrder <em>Order</em>}' attribute.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Order</em>' attribute.
+   * @see #isOrder()
+   * @generated
+   */
+  void setOrder(boolean value);
 
 } // EValuePresence

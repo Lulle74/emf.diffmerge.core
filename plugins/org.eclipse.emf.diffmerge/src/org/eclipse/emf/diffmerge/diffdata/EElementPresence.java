@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata;
 
 import org.eclipse.emf.diffmerge.api.diff.IElementPresence;
@@ -23,17 +20,17 @@ import org.eclipse.emf.diffmerge.api.diff.IElementPresence;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EElementPresence#getOwnerMatch <em>Owner Match</em>}</li>
  * </ul>
- * </p>
  *
  * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEElementPresence()
  * @model superTypes="org.eclipse.emf.diffmerge.diffdata.EElementRelativePresence org.eclipse.emf.diffmerge.diffdata.IElementPresence"
  * @generated
  */
-public interface EElementPresence extends EElementRelativePresence,
-    IElementPresence {
+public interface EElementPresence
+    extends EElementRelativePresence, IElementPresence {
   /**
    * Returns the value of the '<em><b>Owner Match</b></em>' reference.
    * <!-- begin-user-doc -->
@@ -43,10 +40,21 @@ public interface EElementPresence extends EElementRelativePresence,
    * </p>
    * <!-- end-user-doc -->
    * @return the value of the '<em>Owner Match</em>' reference.
+   * @see #setOwnerMatch(EMatch)
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEElementPresence_OwnerMatch()
-   * @model required="true" changeable="false"
+   * @model required="true"
    * @generated
    */
   EMatch getOwnerMatch();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EElementPresence#getOwnerMatch <em>Owner Match</em>}' reference.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Owner Match</em>' reference.
+   * @see #getOwnerMatch()
+   * @generated
+   */
+  void setOwnerMatch(EMatch value);
 
 } // EElementPresence

@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata;
 
 import org.eclipse.emf.diffmerge.api.diff.IReferenceValuePresence;
@@ -24,18 +21,18 @@ import org.eclipse.emf.ecore.EObject;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EReferenceValuePresence#getValue <em>Value</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EReferenceValuePresence#getValueMatch <em>Value Match</em>}</li>
  * </ul>
- * </p>
  *
  * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEReferenceValuePresence()
  * @model superTypes="org.eclipse.emf.diffmerge.diffdata.EValuePresence org.eclipse.emf.diffmerge.diffdata.IReferenceValuePresence"
  * @generated
  */
-public interface EReferenceValuePresence extends EValuePresence,
-    IReferenceValuePresence {
+public interface EReferenceValuePresence
+    extends EValuePresence, IReferenceValuePresence {
 
   /**
    * Returns the value of the '<em><b>Value</b></em>' reference.
@@ -46,11 +43,22 @@ public interface EReferenceValuePresence extends EValuePresence,
    * </p>
    * <!-- end-user-doc -->
    * @return the value of the '<em>Value</em>' reference.
+   * @see #setValue(EObject)
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEReferenceValuePresence_Value()
-   * @model required="true" changeable="false"
+   * @model required="true"
    * @generated
    */
   EObject getValue();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EReferenceValuePresence#getValue <em>Value</em>}' reference.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Value</em>' reference.
+   * @see #getValue()
+   * @generated
+   */
+  void setValue(EObject value);
 
   /**
    * Returns the value of the '<em><b>Value Match</b></em>' reference.
@@ -61,10 +69,21 @@ public interface EReferenceValuePresence extends EValuePresence,
    * </p>
    * <!-- end-user-doc -->
    * @return the value of the '<em>Value Match</em>' reference.
+   * @see #setValueMatch(EMatch)
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEReferenceValuePresence_ValueMatch()
-   * @model required="true" changeable="false"
+   * @model
    * @generated
    */
   EMatch getValueMatch();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EReferenceValuePresence#getValueMatch <em>Value Match</em>}' reference.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Value Match</em>' reference.
+   * @see #getValueMatch()
+   * @generated
+   */
+  void setValueMatch(EMatch value);
   // Nothing needed
 } // EReferenceValuePresence

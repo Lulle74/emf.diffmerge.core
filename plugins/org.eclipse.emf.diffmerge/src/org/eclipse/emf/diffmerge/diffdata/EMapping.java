@@ -1,23 +1,19 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.diffmerge.api.IMapping.Editable;
 import org.eclipse.emf.diffmerge.api.IMatch;
-import org.eclipse.emf.ecore.EObject;
 
 /**
  * <!-- begin-user-doc -->
@@ -26,18 +22,18 @@ import org.eclipse.emf.ecore.EObject;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMapping#getModifiableContents <em>Modifiable Contents</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMapping#getReferenceCompletedMatches <em>Reference Completed Matches</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMapping#getTargetCompletedMatches <em>Target Completed Matches</em>}</li>
  * </ul>
- * </p>
  *
  * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEMapping()
- * @model superTypes="org.eclipse.emf.diffmerge.diffdata.IEditableMapping"
+ * @model superTypes="org.eclipse.emf.diffmerge.diffdata.EIdentified org.eclipse.emf.diffmerge.diffdata.IEditableMapping"
  * @generated
  */
-public interface EMapping extends EObject, Editable {
+public interface EMapping extends EIdentified, Editable {
   /**
    * Returns the value of the '<em><b>Modifiable Contents</b></em>' containment reference list.
    * The list contents are of type {@link org.eclipse.emf.diffmerge.diffdata.EMatch}.
@@ -49,7 +45,7 @@ public interface EMapping extends EObject, Editable {
    * <!-- end-user-doc -->
    * @return the value of the '<em>Modifiable Contents</em>' containment reference list.
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEMapping_ModifiableContents()
-   * @model containment="true" changeable="false"
+   * @model containment="true"
    * @generated
    */
   EList<EMatch> getModifiableContents();

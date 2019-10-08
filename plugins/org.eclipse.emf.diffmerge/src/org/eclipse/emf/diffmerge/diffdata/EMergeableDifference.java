@@ -1,25 +1,20 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.api.diff.IMergeableDifference;
 import org.eclipse.emf.diffmerge.api.diff.IMergeableDifference.Editable;
-
-import org.eclipse.emf.ecore.EObject;
 
 /**
  * <!-- begin-user-doc -->
@@ -28,10 +23,12 @@ import org.eclipse.emf.ecore.EObject;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getComparison <em>Comparison</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#isAlignedWithAncestor <em>Aligned With Ancestor</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#isConflicting <em>Conflicting</em>}</li>
+ *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#isIgnored <em>Ignored</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getMergeDestination <em>Merge Destination</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getPossibleMergeDestinations <em>Possible Merge Destinations</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getExplicitDependenciesForTarget <em>Explicit Dependencies For Target</em>}</li>
@@ -39,13 +36,12 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getImplicitDependenciesForTarget <em>Implicit Dependencies For Target</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getImplicitDependenciesForReference <em>Implicit Dependencies For Reference</em>}</li>
  * </ul>
- * </p>
  *
  * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEMergeableDifference()
- * @model abstract="true" superTypes="org.eclipse.emf.diffmerge.diffdata.IEditableMergeableDifference"
+ * @model abstract="true" superTypes="org.eclipse.emf.diffmerge.diffdata.EIdentified org.eclipse.emf.diffmerge.diffdata.IEditableMergeableDifference"
  * @generated
  */
-public interface EMergeableDifference extends EObject, Editable {
+public interface EMergeableDifference extends EIdentified, Editable {
   /**
    * Returns the value of the '<em><b>Comparison</b></em>' reference.
    * <!-- begin-user-doc -->
@@ -55,11 +51,22 @@ public interface EMergeableDifference extends EObject, Editable {
    * </p>
    * <!-- end-user-doc -->
    * @return the value of the '<em>Comparison</em>' reference.
+   * @see #setComparison(EComparison)
    * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEMergeableDifference_Comparison()
-   * @model required="true" changeable="false"
+   * @model required="true"
    * @generated
    */
   EComparison getComparison();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#getComparison <em>Comparison</em>}' reference.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Comparison</em>' reference.
+   * @see #getComparison()
+   * @generated
+   */
+  void setComparison(EComparison value);
 
   /**
    * Returns the value of the '<em><b>Aligned With Ancestor</b></em>' attribute.
@@ -114,6 +121,32 @@ public interface EMergeableDifference extends EObject, Editable {
    * @generated
    */
   void setConflicting(boolean value);
+
+  /**
+   * Returns the value of the '<em><b>Ignored</b></em>' attribute.
+   * <!-- begin-user-doc -->
+   * <p>
+   * If the meaning of the '<em>Ignored</em>' attribute isn't clear,
+   * there really should be more of a description here...
+   * </p>
+   * <!-- end-user-doc -->
+   * @return the value of the '<em>Ignored</em>' attribute.
+   * @see #setIgnored(boolean)
+   * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEMergeableDifference_Ignored()
+   * @model required="true"
+   * @generated
+   */
+  boolean isIgnored();
+
+  /**
+   * Sets the value of the '{@link org.eclipse.emf.diffmerge.diffdata.EMergeableDifference#isIgnored <em>Ignored</em>}' attribute.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param value the new value of the '<em>Ignored</em>' attribute.
+   * @see #isIgnored()
+   * @generated
+   */
+  void setIgnored(boolean value);
 
   /**
    * Returns the value of the '<em><b>Merge Destination</b></em>' attribute.

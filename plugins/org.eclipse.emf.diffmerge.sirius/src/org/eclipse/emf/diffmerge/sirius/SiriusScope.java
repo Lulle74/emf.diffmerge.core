@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2006-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2006-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.sirius;
 
 import java.util.Arrays;
@@ -22,7 +19,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.diffmerge.api.scopes.IPersistentModelScope;
 import org.eclipse.emf.diffmerge.gmf.GMFScope;
 import org.eclipse.emf.diffmerge.structures.common.FArrayList;
 import org.eclipse.emf.ecore.EObject;
@@ -33,12 +32,16 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.gmf.runtime.notation.NotationPackage;
 import org.eclipse.sirius.business.api.helper.SiriusUtil;
+import org.eclipse.sirius.business.api.query.DRepresentationQuery;
 import org.eclipse.sirius.business.api.resource.ResourceDescriptor;
+import org.eclipse.sirius.business.api.session.Session;
+import org.eclipse.sirius.business.api.session.SessionManager;
 import org.eclipse.sirius.diagram.DiagramPackage;
 import org.eclipse.sirius.viewpoint.DAnalysis;
 import org.eclipse.sirius.viewpoint.DRepresentation;
 import org.eclipse.sirius.viewpoint.DRepresentationDescriptor;
 import org.eclipse.sirius.viewpoint.DSemanticDecorator;
+import org.eclipse.sirius.viewpoint.DView;
 import org.eclipse.sirius.viewpoint.ViewpointPackage;
 import org.eclipse.sirius.viewpoint.description.style.StylePackage;
 
@@ -70,7 +73,8 @@ public class SiriusScope extends GMFScope {
       ViewpointPackage.eINSTANCE.getDRepresentationDescriptor_Representation();
   
   /** The non-null map from representation UIDs to the corresponding descriptors */
-  protected final Map<String, DRepresentationDescriptor> _idToDescriptor;
+  protected final Map<String, DRepresentationDescriptor> _idToDescriptor =
+      new HashMap<String, DRepresentationDescriptor>();
   
   
   /**
@@ -81,7 +85,6 @@ public class SiriusScope extends GMFScope {
    */
   public SiriusScope(URI uri_p, EditingDomain domain, boolean readOnly_p) {
     super(uri_p, domain, readOnly_p);
-    _idToDescriptor = new HashMap<String, DRepresentationDescriptor>();
   }
   
   /**
@@ -92,7 +95,26 @@ public class SiriusScope extends GMFScope {
    */
   public SiriusScope(URI uri_p, ResourceSet resourceSet_p, boolean readOnly_p) {
     super(uri_p, resourceSet_p, readOnly_p);
-    _idToDescriptor = new HashMap<String, DRepresentationDescriptor>();
+  }
+  
+  /**
+   * Constructor
+   * @param uris_p a non-null collection of URIs of resources to load as roots
+   * @param editingDomain_p a non-null editing domain that encompasses the scope
+   * @param readOnly_p whether the scope should be read-only, if supported
+   */
+  public SiriusScope(Collection<URI> uris_p, EditingDomain editingDomain_p, boolean readOnly_p) {
+    super(uris_p, editingDomain_p, readOnly_p);
+  }
+  
+  /**
+   * Constructor
+   * @param uris_p a non-null collection of URIs of resources to load as roots
+   * @param resourceSet_p a non-null resource set where the resources must be loaded
+   * @param readOnly_p whether the scope is in read-only mode, if applicable
+   */
+  public SiriusScope(Collection<URI> uris_p, ResourceSet resourceSet_p, boolean readOnly_p) {
+    super(uris_p, resourceSet_p, readOnly_p);
   }
   
   /**
@@ -102,13 +124,12 @@ public class SiriusScope extends GMFScope {
   public boolean add(EObject source_p, EReference reference_p, EObject value_p) {
     boolean isDescriptorToRepresentation =
         reference_p == SIRIUS_DESCRIPTOR_TO_REPRESENTATION_FEATURE;
-    if (isDescriptorToRepresentation)
+    if (isDescriptorToRepresentation) {
       add(value_p);
+    }
     boolean result = super.add(source_p, reference_p, value_p);
     if (result && isDescriptorToRepresentation) {
-      DRepresentationDescriptor descriptor = (DRepresentationDescriptor)source_p;
-      String uid = getReferencedUID(descriptor);
-      _idToDescriptor.put(uid, descriptor);
+      registerRepresentationDescriptor((DRepresentationDescriptor)source_p);
     }
     return result;
   }
@@ -119,11 +140,14 @@ public class SiriusScope extends GMFScope {
   @Override
   public EObject getContainer(EObject element_p) {
     EObject result;
-    if (element_p instanceof DRepresentation) {
-      DRepresentation representation = (DRepresentation)element_p;
-      result = _idToDescriptor.get(representation.getUid());
+    if (element_p instanceof DRepresentationDescriptor) {
+      registerRepresentationDescriptor((DRepresentationDescriptor)element_p);
+    }
+    EObject basicContainer = super.getContainer(element_p);
+    if (element_p instanceof DRepresentation && basicContainer == null) {
+      result = getRepresentationDescriptor((DRepresentation)element_p);
     } else {
-      result = super.getContainer(element_p);
+      result = basicContainer;
     }
     return result;
   }
@@ -136,7 +160,7 @@ public class SiriusScope extends GMFScope {
     EReference result;
     if (element_p instanceof DRepresentation) {
       result = getContainer(element_p) instanceof DRepresentationDescriptor?
-          SIRIUS_DESCRIPTOR_TO_REPRESENTATION_FEATURE: null;
+          SIRIUS_DESCRIPTOR_TO_REPRESENTATION_FEATURE: super.getContainment(element_p);
     } else {
       result = super.getContainment(element_p);
     }
@@ -153,8 +177,9 @@ public class SiriusScope extends GMFScope {
     Iterator<EObject> it = result.iterator();
     while (it.hasNext()) {
       EObject current = it.next();
-      if (current instanceof DRepresentation && getContainer(current) != null)
+      if (current instanceof DRepresentation && getContainer(current) != null) {
         it.remove();
+      }
     }
     return Collections.unmodifiableList(result);
   }
@@ -167,6 +192,7 @@ public class SiriusScope extends GMFScope {
     List<EObject> result = super.getContents(element_p);
     if (element_p instanceof DRepresentationDescriptor) {
       DRepresentationDescriptor descriptor = (DRepresentationDescriptor)element_p;
+      registerRepresentationDescriptor(descriptor);
       DRepresentation referenced = descriptor.getRepresentation();
       if (referenced != null) {
         List<EObject> originalResult = result;
@@ -209,8 +235,100 @@ public class SiriusScope extends GMFScope {
     ResourceDescriptor rDescriptor = descriptor_p.getRepPath();
     if (rDescriptor != null) {
       URI uri = rDescriptor.getResourceURI();
-      if (uri != null)
+      if (uri != null) {
         result = uri.fragment();
+      }
+    }
+    return result;
+  }
+  
+  /**
+   * Return the descriptor of the given representation, if any and known
+   * @param representation_p a non-null representation
+   * @return a potentially null representation descriptor
+   */
+  public DRepresentationDescriptor getRepresentationDescriptor(
+      DRepresentation representation_p) {
+    DRepresentationDescriptor result;
+    String repID = representation_p.getUid();
+    result = _idToDescriptor.get(repID);
+    if (result == null) {
+      DRepresentationQuery rep2descQuery = new DRepresentationQuery(representation_p);
+      result = rep2descQuery.getRepresentationDescriptor();
+      if (result == null) {
+        result = getRepresentationDescriptorByExploration(representation_p);
+      }
+      if (result != null) {
+        registerRepresentationDescriptor(result);
+      }
+    }
+    return result;
+  }
+  
+  /**
+   * Find and return the descriptor for the given representation, if any, by simple exploration
+   * of this scope
+   * @param representation_p a non-null representation
+   * @return a potentially null descriptor
+   */
+  protected DRepresentationDescriptor getRepresentationDescriptorByExploration(
+      DRepresentation representation_p) {
+    return getRepresentationDescriptorByPhysicalExploration(representation_p, this);
+  }
+  
+  /**
+   * Find and return the descriptor for the given representation, if any, by simple exploration
+   * of the given scope. It is assumed that Sirius DAnalyses are physical roots of the scope.
+   * The scope does not have to be a Sirius scope.
+   * @param representation_p a non-null representation
+   * @param scope_p a non-null scope
+   * @return a potentially null descriptor
+   */
+  public static DRepresentationDescriptor getRepresentationDescriptorByPhysicalExploration(
+      DRepresentation representation_p, IPersistentModelScope scope_p) {
+    List<EObject> roots = scope_p.getRawContents();
+    for (EObject root : roots) {
+      if (root instanceof DAnalysis) {
+        for (DView view : ((DAnalysis)root).getOwnedViews()) {
+          for (DRepresentationDescriptor descriptor : view.getOwnedRepresentationDescriptors()) {
+            if (descriptor.getRepresentation() == representation_p) {
+              return descriptor;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * Return a session resource of the scope, if any
+   * @return a potentially null resource
+   */
+  protected Resource getSessionResource() {
+    for (Resource candidate : getResources()) {
+      if (isSessionResource(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * Return the Sirius session of the editing domain of the scope, if any
+   * @return a potentially null session
+   */
+  public Session getSession() {
+    Session result = null;
+    if (getEditingDomain() != null) {
+      Resource sessionResource = getSessionResource();
+      if (sessionResource != null) {
+        Session sessionForURI = SessionManager.INSTANCE.getExistingSession(
+            sessionResource.getURI());
+        if (sessionForURI != null && sessionForURI.getSessionResource() == sessionResource) {
+          result = sessionForURI;
+        }
+      }
     }
     return result;
   }
@@ -223,6 +341,23 @@ public class SiriusScope extends GMFScope {
     return
         reference_p == SIRIUS_DESCRIPTOR_TO_REPRESENTATION_FEATURE ||
         super.isContainment(reference_p);
+  }
+  
+  /**
+   * Return whether the given resource is a session resource
+   * @param resource_p a non-null resource
+   */
+  protected boolean isSessionResource(Resource resource_p) {
+    URI uri = resource_p.getURI();
+    return uri != null && isSessionResourceURI(uri);
+  }
+  
+  /**
+   * Return whether the given URI is a session resource URI
+   * @param uri_p a non-null URI
+   */
+  protected boolean isSessionResourceURI(URI uri_p) {
+    return SiriusUtil.SESSION_RESOURCE_EXTENSION.equals(uri_p.fileExtension());
   }
   
   /**
@@ -265,10 +400,18 @@ public class SiriusScope extends GMFScope {
   @Override
   protected void notifyExplored(EObject element_p) {
     if (element_p instanceof DRepresentationDescriptor) {
-      DRepresentationDescriptor descriptor = (DRepresentationDescriptor)element_p;
-      String uid = getReferencedUID(descriptor);
-      if (uid != null)
-        _idToDescriptor.put(uid, descriptor);
+      registerRepresentationDescriptor((DRepresentationDescriptor)element_p);
+    }
+  }
+  
+  /**
+   * Register the given representation descriptor for (representation -> descriptor) navigation
+   * @param descriptor_p a non-null representation descriptor
+   */
+  protected void registerRepresentationDescriptor(DRepresentationDescriptor descriptor_p) {
+    String uid = getReferencedUID(descriptor_p);
+    if (uid != null) {
+      _idToDescriptor.put(uid, descriptor_p);
     }
   }
   
@@ -280,11 +423,29 @@ public class SiriusScope extends GMFScope {
     boolean isDescriptorToRepresentation =
         reference_p == SIRIUS_DESCRIPTOR_TO_REPRESENTATION_FEATURE;
     String uid = null;
-    if (isDescriptorToRepresentation)
+    if (isDescriptorToRepresentation) {
       uid = getReferencedUID((DRepresentationDescriptor)source_p);
+    }
     boolean result =  super.remove(source_p, reference_p, value_p);
-    if (result && isDescriptorToRepresentation)
+    if (result && isDescriptorToRepresentation) {
       _idToDescriptor.remove(uid);
+    }
+    return result;
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.impl.scopes.FragmentedModelScope#save()
+   */
+  @Override
+  public boolean save() throws Exception {
+    boolean result;
+    Session session = getSession();
+    if (session != null) {
+      session.save(new NullProgressMonitor());
+      result = true;
+    } else {
+      result = super.save();
+    }
     return result;
   }
   

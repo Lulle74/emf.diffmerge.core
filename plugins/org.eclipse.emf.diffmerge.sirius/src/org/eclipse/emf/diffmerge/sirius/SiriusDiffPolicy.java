@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2006-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2006-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.sirius;
 
 import java.util.Arrays;
@@ -86,9 +83,13 @@ public class SiriusDiffPolicy extends GMFDiffPolicy {
       result = equalResourceDescriptors(
           (ResourceDescriptor)value1_p, (ResourceDescriptor)value2_p);
     }
+    if (!result && DiagramPackage.eINSTANCE.getWorkspaceImage_WorkspacePath() == attribute_p) {
+      result = equalResourcePaths(
+          (String)value1_p, (String)value2_p);
+    }
     return result;
   }
-  
+
   /**
    * @see org.eclipse.emf.diffmerge.impl.policies.DefaultDiffPolicy#coverFeature(org.eclipse.emf.ecore.EStructuralFeature)
    */
@@ -108,8 +109,9 @@ public class SiriusDiffPolicy extends GMFDiffPolicy {
       // Ignore certain transient elements (OK because no cross-ref)
       EObject element = match_p
           .get(match_p.getUncoveredRole().opposite());
-      if (element != null)
+      if (element != null) {
         result = !UNSIGNIFICANT_TYPES.contains(element.eClass());
+      }
     }
     return result;
   }
@@ -121,11 +123,21 @@ public class SiriusDiffPolicy extends GMFDiffPolicy {
   public boolean coverValue(Object value_p, EAttribute attribute_p) {
     boolean result;
     if (IGNORING_EMPTY_STRING_ATTRIBUTES.contains(attribute_p)
-        && ((String) value_p).length() == 0)
+        && ((String) value_p).length() == 0) {
       result = false;
-    else
+    } else {
       result = super.coverValue(value_p, attribute_p);
+    }
     return result;
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.impl.policies.ConfigurableDiffPolicy#doConsiderOrdered(org.eclipse.emf.ecore.EStructuralFeature)
+   */
+  @Override
+  protected boolean doConsiderOrdered(EStructuralFeature feature_p) {
+    return super.doConsiderOrdered(feature_p)
+        && !SEMANTICALLY_UNORDERED_REFERENCES.contains(feature_p);
   }
   
   /**
@@ -141,12 +153,19 @@ public class SiriusDiffPolicy extends GMFDiffPolicy {
   }
   
   /**
-   * @see org.eclipse.emf.diffmerge.impl.policies.ConfigurableDiffPolicy#doConsiderOrdered(org.eclipse.emf.ecore.EStructuralFeature)
+   * Return whether two workspace path are equal. 
+   * Only the segments of the path are considered, not the protocol.
    */
-  @Override
-  protected boolean doConsiderOrdered(EStructuralFeature feature_p) {
-    return super.doConsiderOrdered(feature_p)
-        && !SEMANTICALLY_UNORDERED_REFERENCES.contains(feature_p);
+  protected boolean equalResourcePaths(String value1_p, String value2_p) {
+    boolean result;
+    try {
+      URI uri1 = URI.createURI(value1_p);
+      URI uri2 = URI.createURI(value2_p);
+      result = uri1.segmentsList().equals(uri2.segmentsList());
+    } catch (Exception e) {
+      result = false;
+    }
+    return result;
   }
   
 }

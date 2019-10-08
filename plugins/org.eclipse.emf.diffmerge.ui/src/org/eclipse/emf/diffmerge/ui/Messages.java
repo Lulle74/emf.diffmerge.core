@@ -1,18 +1,15 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
  *    Stephane Bouchet (Intel Corporation) - Bug #442492 : hide number of differences in the UI
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui;
 
 import org.eclipse.osgi.util.NLS;
@@ -65,16 +62,19 @@ public class Messages extends NLS {
   public static String ComparisonSetupWizardPage_Title;
   public static String ComparisonTreeViewer_MatchIDTooltip;
   public static String ComparisonTreeViewer_NoMatchID;
+  public static String ComparisonViewer_AcceptAction_Text;
   public static String ComparisonViewer_CollapseTooltip;
   public static String ComparisonViewer_CountAddLeftMenuItem;
   public static String ComparisonViewer_CountAddRightMenuItem;
   public static String ComparisonViewer_CountMovesMenuItem;
   public static String ComparisonViewer_CountProperMenuItem;
+  public static String ComparisonViewer_DeleteAction_Text;
   public static String ComparisonViewer_DeleteLeftTooltip;
   public static String ComparisonViewer_DeleteRightTooltip;
   public static String ComparisonViewer_Details;
   public static String ComparisonViewer_EnhancedFilterToolTip;
-  public static String ComparisonViewer_EnhancedLinkViewsTooltip;
+  public static String ComparisonViewer_LinkViewsInternal;
+  public static String ComparisonViewer_LinkViewsInternalTooltip;
   public static String ComparisonViewer_EnhancedSortTooltip;
   public static String ComparisonViewer_ExpandTooltip;
   public static String ComparisonViewer_Filtered;
@@ -82,6 +82,7 @@ public class Messages extends NLS {
   public static String ComparisonViewer_FilterToolTip;
   public static String ComparisonViewer_IconsMenuItem;
   public static String ComparisonViewer_IconsMenuItemTooltip;
+  public static String ComparisonViewer_IgnoreAction_Text;
   public static String ComparisonViewer_IgnoreCommandName;
   public static String ComparisonViewer_IgnoreLeftTooltip;
   public static String ComparisonViewer_IgnoreRightTooltip;
@@ -92,7 +93,9 @@ public class Messages extends NLS {
   public static String ComparisonViewer_LabelsMenuItem;
   public static String ComparisonViewer_LabelsMenuItemTooltip;
   public static String ComparisonViewer_Left;
-  public static String ComparisonViewer_LinkViewsTooltip;
+  public static String ComparisonViewer_LinkViews;
+  public static String ComparisonViewer_LinkViewsExternal;
+  public static String ComparisonViewer_LinkViewsExternalToolTip;
   public static String ComparisonViewer_LockTooltip_Locked;
   public static String ComparisonViewer_LockTooltip_Unlocked;
   public static String ComparisonViewer_LogEventsMenuItem;
@@ -103,6 +106,7 @@ public class Messages extends NLS {
   public static String ComparisonViewer_MergeRightTooltip;
   public static String ComparisonViewer_NextTooltip;
   public static String ComparisonViewer_NoDiffsToMerge;
+  public static String ComparisonViewer_OpenDedicated_ToolTip;
   public static String ComparisonViewer_PreviousTooltip;
   public static String ComparisonViewer_RestartInProgress;
   public static String ComparisonViewer_Right;
@@ -121,6 +125,8 @@ public class Messages extends NLS {
   public static String ComparisonViewer_SupportUndoRedoMenuItemTooltip;
   public static String ComparisonViewer_ShowDifferenceNumbersMenuItem;
   public static String ComparisonViewer_ShowDifferenceNumbersTooltip;
+  public static String ComparisonViewer_ShowSidesMenuItem;
+  public static String ComparisonViewer_ShowSidesMenuItemTooltip;
   public static String ComparisonViewer_ToolUpdate;
   public static String ComparisonViewer_ToolUpdate_Tooltip;
   public static String ComparisonViewer_UseTechnicalRepresentation;
@@ -202,7 +208,6 @@ public class Messages extends NLS {
   public static String EMFDiffMergeLabelProvider_ValueDeletion;
   public static String EMFDiffMergeUIPlugin_Label;
   public static String DefaultComparisonMethodFactory_Label;
-  public static String DirectedComparisonViewer_Ignore;
   public static String EnhancedComparisonTreeViewer_DefaultHeader;
   public static String EnhancedFeaturesViewer_DetailsWithSelection;
   public static String EObjectScopeDefinition_LabelInResource;
@@ -229,6 +234,8 @@ public class Messages extends NLS {
   public static String PropertyChangeCategory_Description;
   public static String PropertyChangeCategory_Text;
   public static String ResourceScopeDefinitionFactory_Label;
+  public static String TextMergerDialog_HeaderLabel;
+  public static String TextMergerDialog_ShellLabel;
   public static String ThreeWayOriginCategory_DescriptionLeft;
   public static String ThreeWayOriginCategory_DescriptionRight;
   public static String ThreeWayOriginCategory_TextLeft;

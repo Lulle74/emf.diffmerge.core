@@ -1,25 +1,23 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.specification;
 
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.api.config.IComparisonConfiguration;
+import org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope;
+import org.eclipse.emf.diffmerge.diffdata.EComparison;
 import org.eclipse.emf.diffmerge.ui.specification.ext.DefaultComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.viewers.AbstractComparisonViewer;
 import org.eclipse.emf.diffmerge.ui.viewers.ComparisonViewer;
-import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.domain.IEditingDomainProvider;
@@ -51,6 +49,17 @@ IEditingDomainProvider, IDisposable {
   AbstractComparisonViewer createComparisonViewer(Composite parent_p);
   
   /**
+   * Create and return a (non-computed) comparison between the given scopes
+   * @param targetScope_p the non-null model scope playing the TARGET comparison role
+   * @param referenceScope_p the non-null model scope playing the REFERENCE comparison role
+   * @param ancestorScope_p the optional model scope playing the ANCESTOR comparison role
+   * @see org.eclipse.emf.diffmerge.api.Role
+   * @return a non-null comparison
+   */
+  EComparison createComparison(IEditableModelScope targetScope_p,
+      IEditableModelScope referenceScope_p, IEditableModelScope ancestorScope_p);
+  
+  /**
    * Return the editing domain in which comparison must take place, if any.
    * If null is returned, then undo/redo operations will not be available.
    * @return a potentially null editing domain
@@ -63,6 +72,12 @@ IEditingDomainProvider, IDisposable {
    * @return a potentially null object
    */
   IComparisonMethodFactory getFactory();
+  
+  /**
+   * Return the role that corresponds to the left-hand side
+   * @return TARGET or REFERENCE
+   */
+  Role getLeftRole();
   
   /**
    * Return the scope definition that plays the given role
@@ -84,7 +99,7 @@ IEditingDomainProvider, IDisposable {
   /**
    * Return the reference role in a two-way comparison if any, or null
    * in a three-way comparison
-   * @see EMFDiffNode#getReferenceRole()
+   * @see IComparisonMethod#setTwoWayReferenceRole(Role)
    * @return TARGET, REFERENCE, or null
    */
   Role getTwoWayReferenceRole();
@@ -103,6 +118,13 @@ IEditingDomainProvider, IDisposable {
   boolean isDedicatedEditingDomain();
   
   /**
+   * Return whether the comparison and merge scenario is of a "source-target"
+   * kind, that is, differences are relative to the TARGET side and merge may
+   * only occur on that side
+   */
+  boolean isDirected();
+  
+   /**
    * Return whether this is a three-way comparison, i.e., the ancestor scope is defined
    */
   boolean isThreeWay();
@@ -111,6 +133,12 @@ IEditingDomainProvider, IDisposable {
    * Return whether this comparison method provides additional information to the end-user
    */
   boolean isVerbose();
+  
+  /**
+   * Set whether the comparison and merge scenario is of a "source-target" kind
+   * @see IComparisonMethod#isDirected()
+   */
+  void setDirected(boolean directed_p);
   
   /**
    * Set the editing domain in which comparison must take place.
@@ -126,7 +154,11 @@ IEditingDomainProvider, IDisposable {
   /**
    * Set the reference role in a two-way comparison.
    * This operation has no effect in a three-way comparison.
-   * @see EMFDiffNode#getReferenceRole()
+   * The reference role determines that all differences should be represented
+   * in a way which is relative to it. In a three-way comparison, it is implicitly
+   * ANCESTOR. In a two-way comparison, it can be REFERENCE or TARGET.
+   * If null, then both sides in the two-way comparison are represented in a
+   * symmetric way.
    * @param role_p TARGET, REFERENCE, or null
    */
   void setTwoWayReferenceRole(Role role_p);
@@ -136,6 +168,12 @@ IEditingDomainProvider, IDisposable {
    * @param verbose_p whether additional information may be provided
    */
   void setVerbose(boolean verbose_p);
+  
+  /**
+   * Swap the role that corresponds to the left-hand side.
+   * As a result, the left role is the opposite of what it was.
+   */
+  void swapLeftRole();
   
   /**
    * Swap the scope definitions that play the given roles

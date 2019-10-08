@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.log;
 
 import static org.eclipse.emf.diffmerge.ui.log.DiffMergeLogger.LINE_SEP;
@@ -20,7 +17,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.emf.diffmerge.api.IComparison;
 import org.eclipse.emf.diffmerge.api.IMatch;
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.api.diff.IDifference;
@@ -28,8 +24,8 @@ import org.eclipse.emf.diffmerge.api.diff.IElementRelativeDifference;
 import org.eclipse.emf.diffmerge.api.diff.IReferenceValuePresence;
 import org.eclipse.emf.diffmerge.structures.common.FArrayList;
 import org.eclipse.emf.diffmerge.ui.util.DiffMergeLabelProvider;
+import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.edit.domain.EditingDomain;
 
 
 /**
@@ -38,9 +34,6 @@ import org.eclipse.emf.edit.domain.EditingDomain;
  */
 @SuppressWarnings("nls")
 public class MergeLogEvent extends AbstractLogEvent {
-  
-  /** The optional editing domain in which the merge event occurs */
-  private final EditingDomain _domain;
   
   /** The non-null, potentially empty list of differences */
   private final List<IDifference> _diffs;
@@ -51,25 +44,23 @@ public class MergeLogEvent extends AbstractLogEvent {
   
   /**
    * Constructor
-   * @param domain_p an optional editing domain in which the merge event occurs
+   * @param node_p a non-null diff node
    * @param diff_p the non-null difference being merged
    * @param mergeToLeft_p whether the direction of the merge event is left
    */
-  public MergeLogEvent(EditingDomain domain_p, IDifference diff_p, boolean mergeToLeft_p) {
-    this(domain_p, diff_p.getComparison(), Collections.singletonList(diff_p), mergeToLeft_p);
+  public MergeLogEvent(EMFDiffNode node_p, IDifference diff_p, boolean mergeToLeft_p) {
+    this(node_p, Collections.singletonList(diff_p), mergeToLeft_p);
   }
   
   /**
    * Constructor
-   * @param domain_p an optional editing domain in which the merge event occurs
-   * @param comparison_p the non-null comparison in which the merge event occurs
+   * @param node_p a non-null diff node
    * @param diffs_p the non-null differences being merged
    * @param mergeToLeft_p whether the direction of the merge event is left
    */
-  public MergeLogEvent(EditingDomain domain_p, IComparison comparison_p,
+  public MergeLogEvent(EMFDiffNode node_p,
       Collection<? extends IDifference> diffs_p, boolean mergeToLeft_p) {
-    super(comparison_p);
-    _domain = domain_p;
+    super(node_p);
     _mergeToLeft = mergeToLeft_p;
     _diffs = new FArrayList<IDifference>(diffs_p, null);
   }
@@ -88,7 +79,8 @@ public class MergeLogEvent extends AbstractLogEvent {
   @Override
   public String getRepresentation() {
     StringBuilder builder = new StringBuilder();
-    Role destination = isToLeft()? Role.TARGET: Role.REFERENCE;
+    EMFDiffNode node = getDiffNode();
+    Role destination = node.getRoleForSide(isToLeft());
     String destinationName = isToLeft()? "Left": "Right";
     for (IDifference difference : getDifferences()) {
       builder.append(LINE_SEP);
@@ -103,7 +95,7 @@ public class MergeLogEvent extends AbstractLogEvent {
           EObject location = getNonNull(match, destination);
           String type = location.eClass().getName();
           String name = DiffMergeLabelProvider.getInstance().getMatchText(
-              match, destination, _domain);
+              match, destination, node.getEditingDomain());
           String id = getID(location);
           builder.append('[');
           builder.append(destinationName);
@@ -121,7 +113,7 @@ public class MergeLogEvent extends AbstractLogEvent {
         }
       }
       String msg = DiffMergeLabelProvider.getInstance().getDifferenceText(
-          difference, destination, _domain);
+          difference, destination, node.getEditingDomain());
       DiffMergeLogger.appendAtLevel(builder, 1, msg);
     }
     return builder.toString();

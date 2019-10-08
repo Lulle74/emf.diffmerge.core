@@ -1,40 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Copyright (c) 2010-2017 Thales Global Services S.A.S.
-  All rights reserved. This program and the accompanying materials
-   are made available under the terms of the Eclipse Public License v1.0
-  which accompanies this distribution, and is available at
-  http://www.eclipse.org/legal/epl-v10.html
-  
-   Contributors:
-  Thales Global Services S.A.S - initial API and implementation
--->
-<genmodel:GenModel xmi:version="2.0"
-    xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
-    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/org.eclipse.emf.diffmerge.ui/src"
-    modelPluginID="org.eclipse.emf.diffmerge.ui" redirection="" modelName="DiffUIData"
-    nonNLSMarkers="true" booleanFlagsField="" importerID="org.eclipse.emf.importer.ecore"
-    suppressUnsettable="true" complianceLevel="5.0" copyrightFields="false" language=""
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel" modelDirectory="/org.eclipse.emf.diffmerge.ui/src" modelPluginID="org.eclipse.emf.diffmerge.ui"
+    redirection="" modelName="DiffUIData" nonNLSMarkers="true" codeFormatting="true"
+    booleanFlagsField="" importerID="org.eclipse.emf.importer.ecore" suppressUnsettable="true"
+    complianceLevel="5.0" copyrightFields="false" runtimeVersion="2.6" language=""
     usedGenPackages="platform:/plugin/org.eclipse.emf.diffmerge/model/DiffData.genmodel#//diffdata platform:/plugin/org.eclipse.emf.ecore/model/Ecore.genmodel#//ecore">
   <foreignModel>DiffUIData.ecore</foreignModel>
-  <genPackages prefix="Diffuidata" basePackage="org.eclipse.emf.diffmerge.ui" resource="Basic"
-      disposableProviderFactory="true" ecorePackage="DiffUIData.ecore#/">
+  <genPackages prefix="Diffuidata" basePackage="org.eclipse.emf.diffmerge.ui" resource="XMI"
+      disposableProviderFactory="true" fileExtensions="edm" ecorePackage="DiffUIData.ecore#/">
     <genDataTypes ecoreDataType="DiffUIData.ecore#//TreePath"/>
     <genDataTypes ecoreDataType="DiffUIData.ecore#//EMFDiffNode"/>
     <genClasses ecoreClass="DiffUIData.ecore#//UIComparison">
       <genFeatures property="None" children="true" createChild="false" ecoreFeature="ecore:EReference DiffUIData.ecore#//UIComparison/actualComparison"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference DiffUIData.ecore#//UIComparison/differencesToIgnore"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference DiffUIData.ecore#//UIComparison/lastActionSelection"/>
-      <genOperations ecoreOperation="DiffUIData.ecore#//UIComparison/dispose"/>
+      <genOperations ecoreOperation="DiffUIData.ecore#//UIComparison/clear"/>
     </genClasses>
     <genClasses ecoreClass="DiffUIData.ecore#//ComparisonSelection">
+      <genFeatures property="Readonly" createChild="false" ecoreFeature="ecore:EAttribute DiffUIData.ecore#//ComparisonSelection/diffNode"/>
       <genFeatures property="Readonly" notify="false" createChild="false" ecoreFeature="ecore:EReference DiffUIData.ecore#//ComparisonSelection/selectedMatches"/>
       <genFeatures property="None" children="true" createChild="false" ecoreFeature="ecore:EReference DiffUIData.ecore#//ComparisonSelection/selectedMatchAndFeature"/>
       <genFeatures property="Readonly" notify="false" createChild="false" ecoreFeature="ecore:EReference DiffUIData.ecore#//ComparisonSelection/selectedTreePath"/>
       <genFeatures property="Readonly" notify="false" createChild="false" ecoreFeature="ecore:EReference DiffUIData.ecore#//ComparisonSelection/selectedValuePresences"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EAttribute DiffUIData.ecore#//ComparisonSelection/emfDiffNode"/>
       <genOperations ecoreOperation="DiffUIData.ecore#//ComparisonSelection/asDifferencesToMerge"/>
       <genOperations ecoreOperation="DiffUIData.ecore#//ComparisonSelection/asFeature"/>
+      <genOperations ecoreOperation="DiffUIData.ecore#//ComparisonSelection/asMatchAndFeature"/>
       <genOperations ecoreOperation="DiffUIData.ecore#//ComparisonSelection/asMatch"/>
       <genOperations ecoreOperation="DiffUIData.ecore#//ComparisonSelection/asMatches"/>
       <genOperations ecoreOperation="DiffUIData.ecore#//ComparisonSelection/asMatchPath"/>
@@ -50,6 +39,7 @@
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference DiffUIData.ecore#//MatchToNbEntry/key"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute DiffUIData.ecore#//MatchToNbEntry/value"/>
     </genClasses>
+    <genClasses image="false" ecoreClass="DiffUIData.ecore#//IDisposable"/>
     <genClasses image="false" ecoreClass="DiffUIData.ecore#//IStructuredSelection"/>
   </genPackages>
 </genmodel:GenModel>

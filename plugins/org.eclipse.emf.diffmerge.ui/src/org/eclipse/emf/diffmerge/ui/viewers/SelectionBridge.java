@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import java.util.ArrayList;
@@ -38,10 +35,13 @@ import org.eclipse.jface.viewers.StructuredSelection;
 public class SelectionBridge implements ISelectionChangedListener, ISelectionProvider {
   
   /** The current, potentially null selection */
-  private  ISelection _selection;
+  protected ISelection _selection;
+  
+  /** The potentially null original source of the current selection */
+  protected ISelectionProvider _lastSource;
   
   /** The non-null, potentially empty set of listeners */
-  private final Set<ISelectionChangedListener> _selectionListeners;
+  protected final Set<ISelectionChangedListener> _selectionListeners;
   
   
   /**
@@ -67,6 +67,25 @@ public class SelectionBridge implements ISelectionChangedListener, ISelectionPro
   }
   
   /**
+   * Set the selection and its source and notify listeners
+   * @param source_p a potentially null selection provider
+   * @param selection_p a potentially null selection
+   */
+  protected void doSetSelection(ISelectionProvider source_p, ISelection selection_p) {
+    _lastSource = source_p;
+    _selection = selection_p;
+    notifyListeners();
+  }
+  
+  /**
+   * Return the original source of the current selection if known
+   * @return a potentially null selection provider
+   */
+  public ISelectionProvider getLastSource() {
+    return _lastSource;
+  }
+  
+  /**
    * @see org.eclipse.jface.viewers.ISelectionProvider#getSelection()
    */
   public ISelection getSelection() {
@@ -77,7 +96,8 @@ public class SelectionBridge implements ISelectionChangedListener, ISelectionPro
    * Notify listeners of the current selection
    */
   protected void notifyListeners() {
-    SelectionChangedEvent event = new SelectionChangedEvent(this, _selection);
+    ISelectionProvider source = getLastSource() == null? this: getLastSource();
+    SelectionChangedEvent event = new SelectionChangedEvent(source, _selection);
     for (ISelectionChangedListener listener :
         new ArrayList<ISelectionChangedListener>(_selectionListeners)) {
       listener.selectionChanged(event);
@@ -95,15 +115,14 @@ public class SelectionBridge implements ISelectionChangedListener, ISelectionPro
    * @see org.eclipse.jface.viewers.ISelectionProvider#setSelection(org.eclipse.jface.viewers.ISelection)
    */
   public void setSelection(ISelection selection_p) {
-    _selection = selection_p;
-    notifyListeners();
+    doSetSelection(null, selection_p);
   }
   
   /**
    * @see org.eclipse.jface.viewers.ISelectionChangedListener#selectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)
    */
   public void selectionChanged(SelectionChangedEvent event_p) {
-    setSelection(event_p.getSelection());
+    doSetSelection(event_p.getSelectionProvider(), event_p.getSelection());
   }
   
   
@@ -137,14 +156,16 @@ public class SelectionBridge implements ISelectionChangedListener, ISelectionPro
      */
     public void setSource(ISelectionProvider source_p) {
       if (_source != source_p) {
-        if (_source != null)
+        if (_source != null) {
           _source.removeSelectionChangedListener(this);
+        }
         _source = source_p;
         if (source_p != null) {
           source_p.addSelectionChangedListener(this);
           ISelection newSelection = source_p.getSelection();
-          if (newSelection != null)
-            setSelection(newSelection);
+          if (newSelection != null) {
+            doSetSelection(source_p, newSelection);
+          }
         }
       }
     }

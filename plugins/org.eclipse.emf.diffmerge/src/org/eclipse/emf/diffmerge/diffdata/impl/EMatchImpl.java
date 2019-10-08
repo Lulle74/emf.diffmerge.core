@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.impl;
 
 import static org.eclipse.emf.diffmerge.api.Role.ANCESTOR;
@@ -51,7 +48,6 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.EObjectImpl;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.EcoreEMap;
@@ -79,7 +75,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
  *
  * @generated
  */
-public class EMatchImpl extends EObjectImpl implements EMatch {
+public class EMatchImpl extends EIdentifiedImpl implements EMatch {
 
   /**
    * The default value of the '{@link #getMatchID() <em>Match ID</em>}' attribute.
@@ -105,15 +101,15 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
    * A constant key representing order in the TARGET side in (reference, value presence) maps
    * @generated NOT
    */
-  protected static final EObject REFERENCE_ORDER_KEY_TARGET = 
-      EcoreFactory.eINSTANCE.createEObject();
+  protected static final EObject REFERENCE_ORDER_KEY_TARGET = EcoreFactory.eINSTANCE
+      .createEObject();
 
   /**
    * A constant key representing order in the REFERENCE side in (reference, value presence) maps
    * @generated NOT
    */
-  protected static final EObject REFERENCE_ORDER_KEY_REFERENCE =
-      EcoreFactory.eINSTANCE.createEObject();
+  protected static final EObject REFERENCE_ORDER_KEY_REFERENCE = EcoreFactory.eINSTANCE
+      .createEObject();
 
   /**
    * A constant key representing order in the TARGET side in (attribute, value presence) maps
@@ -236,9 +232,9 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
    */
   public EMatchImpl(EObject target_p, EObject reference_p, EObject ancestor_p) {
     this();
-    target = target_p;
-    reference = reference_p;
-    ancestor = ancestor_p;
+    setTarget(target_p);
+    setReference(reference_p);
+    setAncestor(ancestor_p);
   }
 
   /**
@@ -446,6 +442,7 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
           ReferenceToElementToDifferenceEntryImpl.class, this,
           DiffdataPackage.EMATCH__MODIFIABLE_REFERENCE_MAP) {
         private static final long serialVersionUID = 1L;
+
         /**
          * @see org.eclipse.emf.common.util.BasicEMap#useEqualsForKey()
          */
@@ -453,6 +450,7 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
         protected boolean useEqualsForKey() {
           return false;
         }
+
         /**
          * @see org.eclipse.emf.common.util.BasicEMap#useEqualsForValue()
          */
@@ -805,7 +803,7 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
     if (eIsProxy())
       return super.toString();
 
-    StringBuffer result = new StringBuffer(super.toString());
+    StringBuilder result = new StringBuilder(super.toString());
     result.append(" (matchID: "); //$NON-NLS-1$
     result.append(matchID);
     result.append(')');
@@ -828,7 +826,8 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
     Object key;
     if (presence_p.isOrder())
       key = presence_p.getPresenceRole() == Role.TARGET
-          ? ATTRIBUTE_ORDER_KEY_TARGET : ATTRIBUTE_ORDER_KEY_REFERENCE;
+          ? ATTRIBUTE_ORDER_KEY_TARGET
+          : ATTRIBUTE_ORDER_KEY_REFERENCE;
     else
       key = presence_p.getValue();
     forAttribute.put(key, presence_p);
@@ -853,16 +852,17 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
    */
   protected void addReferenceValuePresence(IReferenceValuePresence presence_p) {
     assert presence_p.getElementMatch() == this;
-    EMap<EReference, EMap<EObject, IReferenceValuePresence>> referenceMap =
-        getModifiableReferenceMap(true);
-    EMap<EObject, IReferenceValuePresence> forReference =
-        referenceMap.get(presence_p.getFeature());
+    EMap<EReference, EMap<EObject, IReferenceValuePresence>> referenceMap = getModifiableReferenceMap(
+        true);
+    EMap<EObject, IReferenceValuePresence> forReference = referenceMap
+        .get(presence_p.getFeature());
     if (forReference == null)
       forReference = newReferenceValueToPresenceMap(presence_p.getFeature());
     EObject key;
     if (presence_p.isOrder())
       key = presence_p.getPresenceRole() == Role.TARGET
-          ? REFERENCE_ORDER_KEY_TARGET : REFERENCE_ORDER_KEY_REFERENCE;
+          ? REFERENCE_ORDER_KEY_TARGET
+          : REFERENCE_ORDER_KEY_REFERENCE;
     else
       key = presence_p.getValue();
     forReference.put(key, presence_p); // key cannot be null
@@ -1068,17 +1068,20 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
         EMap<Object, IAttributeValuePresence> forAttribute = attributeMap
             .get(feature_p);
         if (forAttribute != null)
-          result = forAttribute.get(role_p == Role.TARGET
-              ? ATTRIBUTE_ORDER_KEY_TARGET : ATTRIBUTE_ORDER_KEY_REFERENCE);
+          result = forAttribute
+              .get(role_p == Role.TARGET ? ATTRIBUTE_ORDER_KEY_TARGET
+                  : ATTRIBUTE_ORDER_KEY_REFERENCE);
       }
     } else if (feature_p instanceof EReference) {
-      EMap<EReference, EMap<EObject, IReferenceValuePresence>> referenceMap =
-          getModifiableReferenceMap(false);
+      EMap<EReference, EMap<EObject, IReferenceValuePresence>> referenceMap = getModifiableReferenceMap(
+          false);
       if (referenceMap != null) {
-        EMap<EObject, IReferenceValuePresence> forReference = referenceMap.get(feature_p);
+        EMap<EObject, IReferenceValuePresence> forReference = referenceMap
+            .get(feature_p);
         if (forReference != null)
-          result = forReference.get(role_p == Role.TARGET
-              ? REFERENCE_ORDER_KEY_TARGET : REFERENCE_ORDER_KEY_REFERENCE);
+          result = forReference
+              .get(role_p == Role.TARGET ? REFERENCE_ORDER_KEY_TARGET
+                  : REFERENCE_ORDER_KEY_REFERENCE);
       }
     }
     return result;
@@ -1115,8 +1118,8 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
       EReference reference_p) {
     Collection<IReferenceValuePresence> result = null;
     if (getModifiableReferenceMap(false) != null) {
-      EMap<EObject, IReferenceValuePresence> forReference =
-          getModifiableReferenceMap(false).get(reference_p);
+      EMap<EObject, IReferenceValuePresence> forReference = getModifiableReferenceMap(
+          false).get(reference_p);
       if (forReference != null)
         result = Collections.unmodifiableCollection(forReference.values());
     }
@@ -1230,6 +1233,14 @@ public class EMatchImpl extends EObjectImpl implements EMatch {
    */
   public boolean isPartial() {
     return getUncoveredRole() != null;
+  }
+
+  /**
+   * @see org.eclipse.emf.diffmerge.api.IPureMatch#isPartial(org.eclipse.emf.diffmerge.api.Role, org.eclipse.emf.diffmerge.api.Role)
+   * @generated NOT
+   */
+  public boolean isPartial(Role role1_p, Role role2_p) {
+    return !coversRole(role1_p) || !coversRole(role2_p);
   }
 
   /**

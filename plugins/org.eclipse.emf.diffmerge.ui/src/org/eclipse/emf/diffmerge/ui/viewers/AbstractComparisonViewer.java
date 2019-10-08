@@ -1,17 +1,14 @@
-/**
- * <copyright>
+/*********************************************************************
+ * Copyright (c) 2013-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
- * Copyright (c) 2013-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import java.util.HashSet;
@@ -27,32 +24,39 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.command.CommandStack;
 import org.eclipse.emf.diffmerge.api.IComparison;
+import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.api.scopes.IModelScope;
 import org.eclipse.emf.diffmerge.api.scopes.IPersistentModelScope;
 import org.eclipse.emf.diffmerge.diffdata.EComparison;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
+import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.ImageID;
 import org.eclipse.emf.diffmerge.ui.Messages;
 import org.eclipse.emf.diffmerge.ui.diffuidata.ComparisonSelection;
 import org.eclipse.emf.diffmerge.ui.diffuidata.UIComparison;
 import org.eclipse.emf.diffmerge.ui.util.DiffMergeLabelProvider;
 import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
+import org.eclipse.emf.diffmerge.ui.util.UserProperty.Identifier;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.edit.domain.EditingDomain;
+import org.eclipse.emf.edit.domain.IEditingDomainProvider;
 import org.eclipse.emf.transaction.util.TransactionUtil;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 
@@ -71,8 +75,14 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   /** The non-null set of property change listeners */
   private final Set<IPropertyChangeListener> _changeListeners;
   
-  /** The main control of the viewer */
+  /** The non-null shell to which the control of the viewer belongs */
+  private Shell _shell;
+  
+  /** The (non-null after initialization and before disposal) main control of the viewer */
   private Composite _control;
+  
+  /** Whether the selection is provided outside the viewer */
+  protected boolean _isExternallySynced;
   
   /** The current input (initially null) */
   private EMFDiffNode _input;
@@ -80,23 +90,29 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   /** The non-null difference category provider */
   private IDifferenceCategoryProvider _categoryProvider;
   
-  /** The last command that was executed before the last save */
-  private Command _lastCommandBeforeSave;
+  /** The last command/operation that was executed before the last save */
+  private Object _lastCommandBeforeSave;
   
   /** The optional navigatable for navigation from the workbench menu bar buttons */
   private INavigatable _navigatable;
   
+  /** The (initially null) selection bridge from this viewer to the outside */
+  protected SelectionBridge _selectionBridgeToOutside;
   
   /**
    * Constructor
    * @param parent_p a non-null composite
    */
   public AbstractComparisonViewer(Composite parent_p) {
+    _shell = parent_p.getShell();
     _changeListeners = new HashSet<IPropertyChangeListener>(1);
     _input = null;
+    _isExternallySynced = true;
     _lastCommandBeforeSave = null;
     _categoryProvider = new DefaultDifferenceCategoryProvider();
+    _selectionBridgeToOutside = null;
     _control = createControls(parent_p);
+    setupSelectionProvider();
     hookControl(_control);
     registerNavigatable(_control, createNavigatable());
   }
@@ -111,8 +127,23 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   /**
    * @see org.eclipse.compare.structuremergeviewer.ICompareInputChangeListener#compareInputChanged(org.eclipse.compare.structuremergeviewer.ICompareInput)
    */
-  public void compareInputChanged(ICompareInput source_p) {
-    refresh();
+  public void compareInputChanged(final ICompareInput source_p) {
+    final Display display = getDisplay();
+    display.syncExec(new Runnable() {
+      /**
+       * @see java.lang.Runnable#run()
+       */
+      public void run() {
+        BusyIndicator.showWhile(display, new Runnable() {
+          /**
+           * @see java.lang.Runnable#run()
+           */
+          public void run() {
+            handleCompareInputChanged(source_p);
+          }
+        });
+      }
+    });
   }
   
   /**
@@ -131,6 +162,22 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   }
   
   /**
+   * Execute the given runnable that may solely modify the comparison
+   * and ignores transactional aspects
+   * @param runnable_p a non-null object
+   */
+  protected void executeOnComparison(final Runnable runnable_p) {
+    EMFDiffNode input = getInput();
+    final boolean recordChanges = input != null && input.isUndoRedoSupported();
+    final EditingDomain domain = getEditingDomain();
+    try {
+      MiscUtil.executeWithBusyCursor(domain, null, runnable_p, recordChanges, getDisplay());
+    } catch (Exception e) {
+      throw new OperationCanceledException(e.getLocalizedMessage()); // Trigger transaction rollback
+    }
+  }
+  
+  /**
    * Execute the given runnable that may modify the model on the given side
    * and ignores transactional aspects
    * @param runnable_p a non-null object
@@ -141,9 +188,20 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
     final boolean recordChanges = input != null && input.isUndoRedoSupported();
     final EditingDomain domain = getEditingDomain(onLeft_p);
     try {
-      MiscUtil.executeWithBusyCursor(domain, null, runnable_p, recordChanges, getShell().getDisplay());
+      MiscUtil.executeWithBusyCursor(domain, null, runnable_p, recordChanges, getDisplay());
     } catch (Exception e) {
       throw new OperationCanceledException(e.getLocalizedMessage()); // Trigger transaction rollback
+    }
+  }
+  
+  /**
+   * Notify that save has just occurred
+   */
+  protected void didSave() {
+    // Update the last command before save so as to later determine the dirty state
+    Object[] currentUndoCommand = getUndoCommand();
+    if (currentUndoCommand.length > 0) {
+      _lastCommandBeforeSave = currentUndoCommand[0];
     }
   }
   
@@ -171,8 +229,19 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    * @param newValue_p the potentially null, new value of the property
    */
   protected void firePropertyChangeEvent(String propertyName_p, Object newValue_p) {
+    firePropertyChangeEvent(propertyName_p, newValue_p, null);
+  }
+  
+  /**
+   * Notify listeners of a property change event
+   * @param propertyName_p the non-null name of the property
+   * @param newValue_p the potentially null new value of the property
+   * @param oldValue_p the potentially null previous value of the property
+   */
+  protected void firePropertyChangeEvent(String propertyName_p, Object newValue_p,
+      Object oldValue_p) {
     PropertyChangeEvent event = new PropertyChangeEvent(
-        this, propertyName_p, null, newValue_p);
+        this, propertyName_p, oldValue_p, newValue_p);
     for (IPropertyChangeListener listener : _changeListeners) {
       listener.propertyChange(event);
     }
@@ -187,17 +256,18 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
       try {
         if (getInput().isModified(true)) {
           IModelScope leftScope = comparison.getScope(getInput().getRoleForSide(true));
-          if (leftScope instanceof IPersistentModelScope.Editable)
+          if (leftScope instanceof IPersistentModelScope.Editable) {
             ((IPersistentModelScope.Editable)leftScope).save();
+        }
         }
         if (getInput().isModified(false)) {
           IModelScope rightScope = comparison.getScope(getInput().getRoleForSide(false));
-          if (rightScope instanceof IPersistentModelScope.Editable)
+          if (rightScope instanceof IPersistentModelScope.Editable) {
             ((IPersistentModelScope.Editable)rightScope).save();
         }
+        }
         firePropertyChangeEvent(CompareEditorInput.DIRTY_STATE, new Boolean(false));
-        if (getEditingDomain() != null)
-          _lastCommandBeforeSave = getEditingDomain().getCommandStack().getUndoCommand();
+        didSave();
       } catch (Exception e) {
         MessageDialog.openError(
             getShell(), EMFDiffMergeUIPlugin.LABEL, Messages.ComparisonViewer_SaveFailed + e);
@@ -211,10 +281,12 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   @SuppressWarnings({ "rawtypes", "unchecked" }) // Compatibility with old versions of Eclipse
   public Object  getAdapter(Class adapter_p) {
     Object result = null;
-    if (INavigatable.class.equals(adapter_p))
+    if (INavigatable.class.equals(adapter_p)) {
       result = getNavigatable();
-    if (result == null)
+    }
+    if (result == null) {
       result = Platform.getAdapterManager().getAdapter(this, adapter_p);
+    }
     return result;
   }
   
@@ -244,6 +316,26 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   }
   
   /**
+   * Return an appropriate display for the UI without specific assumptions
+   * @return a non-null display
+   */
+  protected Display getDisplay() {
+    Display result = Display.getCurrent();
+    if (result == null) {
+      result = Display.getDefault();
+    }
+    return result;
+  }
+  
+  /**
+   * Return the driving role for this viewer
+   * @return a role which is assumed non-null after setInput(Object) has been invoked
+   */
+  protected Role getDrivingRole() {
+    return getInput() == null? null: getInput().getDrivingRole();
+  }
+  
+  /**
    * Return the editing domain for this viewer
    * @return an editing domain which may be non-null after setInput(Object) has been invoked
    */
@@ -266,22 +358,26 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
         if (comparison != null) {
           IModelScope impactedScope = comparison.getScope(
               input.getRoleForSide(onLeft_p));
-          if (impactedScope instanceof IPersistentModelScope) {
+          if (impactedScope instanceof IEditingDomainProvider) {
+            result = ((IEditingDomainProvider)impactedScope).getEditingDomain();
+          }
+          if (result == null && impactedScope instanceof IPersistentModelScope) {
             Resource resource = ((IPersistentModelScope)impactedScope).getHoldingResource();
-            if (resource != null)
+            if (resource != null) {
               result = TransactionUtil.getEditingDomain(resource);
           }
         }
       }
     }
+    }
     return result;
   }
   
   /**
-   * Return the last command that was executed before the last save
-   * @return a potentially null command
+   * Return the last command/operation that was executed before the last save
+   * @return a potentially null object
    */
-  protected Command getLastCommandBeforeSave() {
+  protected Object getLastCommandBeforeSave() {
     return _lastCommandBeforeSave;
   }
   
@@ -296,12 +392,10 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   }
   
   /**
-   * Return a selection provider that covers the selection of sub-viewers if any
+   * Return a selection provider that covers the selection of the sub-viewers
    * @return a non-null selection provider
    */
-  public ISelectionProvider getMultiViewerSelectionProvider() {
-    return this;
-  }
+  protected abstract ISelectionProvider getMultiViewerSelectionProvider();
   
   /**
    * Return the navigatable for this viewer, if any
@@ -321,11 +415,28 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   }
   
   /**
+   * Return a selection provider for outside this viewer which may selectively reflect
+   * the selection of this viewer, e.g., for performance reasons
+   * @return a non-null selection provider
+   */
+  public ISelectionProvider getSelectionProvider() {
+    return _selectionBridgeToOutside;
+  }
+  
+  /**
    * Return the shell of this viewer
    * @return a non-null shell
    */
   protected Shell getShell() {
-    return getControl().getShell();
+    return _shell;
+  }
+  
+  /**
+   * Return the target role of the merge, if defined
+   * @return a potentially null role
+   */
+  protected Role getTargetRole() {
+    return getInput() == null? null: getInput().getTargetRole();
   }
   
   /**
@@ -337,6 +448,24 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   }
   
   /**
+   * Return the image of the given ID
+   * @param id_p a non-null image ID
+   * @return a (normally) non-null image
+   */
+  protected Image getImage(ImageID id_p) {
+    return EMFDiffMergeUIPlugin.getDefault().getImage(id_p);
+  }
+  
+  /**
+   * Return the image descriptor of the given ID
+   * @param id_p a non-null image ID
+   * @return a (normally) non-null image descriptor
+   */
+  protected ImageDescriptor getImageDescriptor(ImageID id_p) {
+    return EMFDiffMergeUIPlugin.getDefault().getImageDescriptor(id_p);
+  }
+  
+  /**
    * @see org.eclipse.jface.viewers.Viewer#getInput()
    */
   @Override
@@ -345,14 +474,61 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   }
   
   /**
+   * Return the current undo command, if any
+   * @return a singleton array in case of success that may contain null, an empty array otherwise
+   */
+  protected Object[] getUndoCommand() {
+    Object[] result = new Object[0];
+    EMFDiffNode input = getInput();
+    if (input != null) {
+      EditingDomain domain = input.getEditingDomain();
+      if (domain != null) {
+        result = new Object[] {
+            getEditingDomain().getCommandStack().getUndoCommand() };
+      }
+
+    }
+    return result;
+  }
+  
+  /**
    * Dispose this viewer as a reaction to the disposal of its control
    */
   protected void handleDispose() {
+
+    setSelection(StructuredSelection.EMPTY, false);
+    if (_selectionBridgeToOutside != null) {
+      getMultiViewerSelectionProvider().removeSelectionChangedListener(
+          _selectionBridgeToOutside);
+      _selectionBridgeToOutside.clearListeners();
+      _selectionBridgeToOutside = null;
+    }
     _changeListeners.clear();
     _input = null;
+    _shell = null;
     _control = null;
     _lastCommandBeforeSave = null;
     _navigatable = null;
+  }
+  
+  /**
+   * Delegated from compareInputChanged. It can be assumed that the current thread is the UI thread.
+   * @see org.eclipse.compare.structuremergeviewer.ICompareInputChangeListener#compareInputChanged(org.eclipse.compare.structuremergeviewer.ICompareInput)
+   */
+  protected void handleCompareInputChanged(ICompareInput source_p) {
+    // Dirty state
+    if (source_p instanceof IEditingDomainProvider) {
+      EditingDomain domain = ((IEditingDomainProvider)source_p).getEditingDomain();
+      if (domain != null) {
+        Object[] undoCommand = getUndoCommand();
+        if (undoCommand.length > 0) {
+          boolean newDirty = undoCommand[0] != getLastCommandBeforeSave();
+          firePropertyChangeEvent(CompareEditorInput.DIRTY_STATE, new Boolean(newDirty));
+        }
+      }
+    }
+    // Viewer contents and tools
+    refresh();
   }
   
   /**
@@ -376,11 +552,13 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    */
   @Override
   protected void inputChanged(Object input_p, Object oldInput_p) {
-    if (oldInput_p instanceof ICompareInput)
+    if (oldInput_p instanceof ICompareInput) {
       ((ICompareInput)oldInput_p).removeCompareInputChangeListener(this);
+    }
 
     if (input_p instanceof EMFDiffNode) {
       EMFDiffNode node = (EMFDiffNode)input_p;
+      registerUserProperties(node);
       registerCategories(node);
       node.updateDifferenceNumbers();
       node.getCategoryManager().setDefaultConfiguration();
@@ -397,7 +575,42 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
         }
       });
     }
-    firePropertyChangeEvent(PROPERTY_CURRENT_INPUT, null);
+    firePropertyChangeEvent(PROPERTY_CURRENT_INPUT, input_p, oldInput_p);
+  }
+  
+  /**
+   * Return whether the given selection provider must be considered as internal to this viewer
+   * @param provider_p a potentially null object
+   */
+  protected boolean isInternalSelectionProvider(ISelectionProvider provider_p) {
+    // Redefine if there are sub-viewers
+    return provider_p == this || provider_p == getMultiViewerSelectionProvider();
+  }
+  
+  /**
+   * Return whether the viewer belongs to a workbench window,
+   * assuming the current thread is the UI thread
+   */
+  protected boolean isInWorkbenchWindow() {
+    return false;
+  }
+  
+  /**
+   * Return whether the boolean user property of the given ID is set and has value true
+   * @param id_p a non-null object
+   */
+  protected boolean isUserPropertyFalse(Identifier<Boolean> id_p) {
+    EMFDiffNode input = getInput();
+    return input != null && input.isUserPropertyFalse(id_p);
+  }
+  
+  /**
+   * Return whether the boolean user property of the given ID is set and has value true
+   * @param id_p a non-null object
+   */
+  protected boolean isUserPropertyTrue(Identifier<Boolean> id_p) {
+    EMFDiffNode input = getInput();
+    return input != null && input.isUserPropertyTrue(id_p);
   }
   
   /**
@@ -423,8 +636,9 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    */
   protected void registerCategories(EMFDiffNode node_p) {
     IDifferenceCategoryProvider provider = getCategoryProvider();
-    if (provider != null)
+    if (provider != null) {
       provider.provideCategories(node_p);
+  }
   }
   
   /**
@@ -435,11 +649,20 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    */
   protected void registerNavigatable(Control control_p, INavigatable navigatable_p) {
     _navigatable = navigatable_p;
-    if (_navigatable != null)
+    if (_navigatable != null) {
       control_p.setData(INavigatable.NAVIGATOR_PROPERTY, _navigatable);
+  }
   }
   
   /**
+   * Register the user properties this viewer supports in the given input
+   * @param input_p a non-null viewer input supporting user properties
+   */
+  protected void registerUserProperties(EMFDiffNode input_p) {
+    // Override for specific user properties
+  }
+  
+/**
    * @see org.eclipse.compare.IPropertyChangeNotifier#removePropertyChangeListener(org.eclipse.jface.util.IPropertyChangeListener)
    */
   public void removePropertyChangeListener(IPropertyChangeListener listener_p) {
@@ -452,8 +675,7 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
    * viewer be set afterwards.
    * @param provider_p a potentially null object
    */
-  public void setCategoryProvider(
-      IDifferenceCategoryProvider provider_p) {
+  public void setCategoryProvider(IDifferenceCategoryProvider provider_p) {
     _categoryProvider = provider_p;
   }
   
@@ -467,6 +689,13 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
       _input = (EMFDiffNode)input_p;
       inputChanged(_input, oldInput);
     }
+  }
+  
+  /**
+   * Set up the selection provider
+   */
+  protected void setupSelectionProvider() {
+    
   }
   
   /**
@@ -484,33 +713,28 @@ implements IFlushable, IPropertyChangeNotifier, ICompareInputChangeListener, IAd
   protected void undoRedo(final boolean undo_p) {
     final EditingDomain editingDomain = getEditingDomain();
     if (editingDomain != null) {
-      BusyIndicator.showWhile(getShell().getDisplay(), new Runnable() {
+      BusyIndicator.showWhile(getDisplay(), new Runnable() {
         /**
          * @see java.lang.Runnable#run()
          */
         public void run() {
           final CommandStack stack = editingDomain.getCommandStack();
           final ComparisonSelection lastActionSelection = getUIComparison().getLastActionSelection();
-          if (undo_p && stack.canUndo())
+          if (undo_p && stack.canUndo()) {
             stack.undo();
-          else if (!undo_p && stack.canRedo())
+          } else if (!undo_p && stack.canRedo()) {
             stack.redo();
-          boolean dirty = stack.getUndoCommand() != getLastCommandBeforeSave();
-          firePropertyChangeEvent(CompareEditorInput.DIRTY_STATE, new Boolean(dirty));
-          undoRedoPerformed(undo_p);
-          if (lastActionSelection != null)
+          }
+          EMFDiffNode input = getInput();
+          if (input != null && !input.isReactive()) {
+            input.updateDifferenceNumbers();
+          }
+          if (lastActionSelection != null) {
             setSelection(lastActionSelection, true);
+        }
         }
       });
     }
-  }
-  
-  /**
-   * Called when undo/redo has been performed, override to react
-   * @param undo_p whether it was undo or redo
-   */
-  protected void undoRedoPerformed(final boolean undo_p) {
-    // Nothing by default
   }
   
 }

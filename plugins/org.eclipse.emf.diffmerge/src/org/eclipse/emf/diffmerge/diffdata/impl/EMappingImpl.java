@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.impl;
 
 import java.util.Collection;
@@ -42,7 +39,6 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EStructuralFeature.Setting;
 import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.emf.ecore.impl.EObjectImpl;
 import org.eclipse.emf.ecore.util.EContentsEList;
 import org.eclipse.emf.ecore.util.ECrossReferenceAdapter;
 import org.eclipse.emf.ecore.util.ECrossReferenceEList;
@@ -57,16 +53,16 @@ import org.eclipse.emf.ecore.util.InternalEList;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EMappingImpl#getModifiableContents <em>Modifiable Contents</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EMappingImpl#getReferenceCompletedMatches <em>Reference Completed Matches</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EMappingImpl#getTargetCompletedMatches <em>Target Completed Matches</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
-public class EMappingImpl extends EObjectImpl implements EMapping {
+public class EMappingImpl extends EIdentifiedImpl implements EMapping {
   /**
    * The cached value of the '{@link #getModifiableContents() <em>Modifiable Contents</em>}' containment reference list.
    * <!-- begin-user-doc -->
@@ -227,15 +223,19 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
   @Override
   public void eSet(int featureID, Object newValue) {
     switch (featureID) {
+    case DiffdataPackage.EMAPPING__MODIFIABLE_CONTENTS:
+      getModifiableContents().clear();
+      getModifiableContents().addAll((Collection<? extends EMatch>) newValue);
+      return;
     case DiffdataPackage.EMAPPING__REFERENCE_COMPLETED_MATCHES:
       getReferenceCompletedMatches().clear();
-      getReferenceCompletedMatches().addAll(
-          (Collection<? extends IMatch>) newValue);
+      getReferenceCompletedMatches()
+          .addAll((Collection<? extends IMatch>) newValue);
       return;
     case DiffdataPackage.EMAPPING__TARGET_COMPLETED_MATCHES:
       getTargetCompletedMatches().clear();
-      getTargetCompletedMatches().addAll(
-          (Collection<? extends IMatch>) newValue);
+      getTargetCompletedMatches()
+          .addAll((Collection<? extends IMatch>) newValue);
       return;
     }
     super.eSet(featureID, newValue);
@@ -249,6 +249,9 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
   @Override
   public void eUnset(int featureID) {
     switch (featureID) {
+    case DiffdataPackage.EMAPPING__MODIFIABLE_CONTENTS:
+      getModifiableContents().clear();
+      return;
     case DiffdataPackage.EMAPPING__REFERENCE_COMPLETED_MATCHES:
       getReferenceCompletedMatches().clear();
       return;
@@ -337,8 +340,8 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
    * @generated NOT
    */
   public Collection<IMatch> getCompletedMatches(Role destinationRole_p) {
-    return Collections
-        .unmodifiableCollection(getModifiableCompletedMatches(destinationRole_p));
+    return Collections.unmodifiableCollection(
+        getModifiableCompletedMatches(destinationRole_p));
   }
 
   /**
@@ -365,7 +368,8 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
    * @see org.eclipse.emf.diffmerge.api.IMapping#getCrossReferences(org.eclipse.emf.ecore.EObject, org.eclipse.emf.diffmerge.api.Role)
    * @generated NOT
    */
-  public Collection<Setting> getCrossReferences(EObject element_p, Role role_p) {
+  public Collection<Setting> getCrossReferences(EObject element_p,
+      Role role_p) {
     Collection<Setting> result = null;
     ScopeCrossReferencer referencer = null;
     if (role_p == Role.TARGET)
@@ -415,7 +419,8 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
    * @see org.eclipse.emf.diffmerge.api.IMapping.Editable#getModifiableCompletedMatches(org.eclipse.emf.diffmerge.api.Role)
    * @generated NOT
    */
-  public Collection<IMatch> getModifiableCompletedMatches(Role destinationRole_p) {
+  public Collection<IMatch> getModifiableCompletedMatches(
+      Role destinationRole_p) {
     return Role.TARGET == destinationRole_p ? getTargetCompletedMatches()
         : getReferenceCompletedMatches();
   }
@@ -450,7 +455,7 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
    * @generated NOT
    */
   public Role getOrderingRole() {
-    return Role.REFERENCE;
+    return Role.TARGET;
   }
 
   /**
@@ -557,7 +562,8 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
    * @see org.eclipse.emf.diffmerge.api.IMapping#maps(org.eclipse.emf.ecore.EObject, org.eclipse.emf.ecore.EObject, org.eclipse.emf.ecore.EObject)
    * @generated NOT
    */
-  public boolean maps(EObject target_p, EObject reference_p, EObject ancestor_p) {
+  public boolean maps(EObject target_p, EObject reference_p,
+      EObject ancestor_p) {
     return maps(ancestor_p, Role.ANCESTOR, target_p, Role.TARGET)
         && maps(ancestor_p, Role.ANCESTOR, reference_p, Role.REFERENCE)
         && maps(target_p, Role.TARGET, reference_p, Role.REFERENCE);
@@ -619,8 +625,8 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
    * A cross reference adapter for retrieving matches from model elements.
    * @generated NOT
    */
-  protected static class MatchCrossReferenceAdapter extends
-      ECrossReferenceAdapter {
+  protected static class MatchCrossReferenceAdapter
+      extends ECrossReferenceAdapter {
     /**
      * @see org.eclipse.emf.ecore.util.ECrossReferenceAdapter#isIncluded(org.eclipse.emf.ecore.EReference)
      */
@@ -639,10 +645,10 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
   protected class ScopeCrossReferencer extends EcoreUtil.CrossReferencer {
     /** The serial version */
     private static final long serialVersionUID = 1L;
-    
+
     /** The non-null role played by the scope to cross-reference */
     protected final Role _role;
-    
+
     /**
      * Constructor
      * @param role_p a role which is TARGET or REFERENCE
@@ -679,16 +685,18 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
      * @see org.eclipse.emf.ecore.util.EcoreUtil.CrossReferencer#getCrossReferences(org.eclipse.emf.ecore.EObject)
      */
     @Override
-    protected EContentsEList.FeatureIterator<EObject> getCrossReferences(EObject eObject) {
+    protected EContentsEList.FeatureIterator<EObject> getCrossReferences(
+        EObject eObject) {
       return new ECrossReferenceEList.FeatureIteratorImpl<EObject>(eObject) {
         /**
          * @see org.eclipse.emf.ecore.util.EContentsEList.FeatureIteratorImpl#isIncluded(org.eclipse.emf.ecore.EStructuralFeature)
          */
         @Override
         protected boolean isIncluded(EStructuralFeature feature_p) {
-          return super.isIncludedEntry(feature_p) &&
-              ScopeCrossReferencer.this.isIncluded((EReference)feature_p);
+          return super.isIncludedEntry(feature_p)
+              && ScopeCrossReferencer.this.isIncluded((EReference) feature_p);
         }
+
         /**
          * @see org.eclipse.emf.ecore.util.EContentsEList.FeatureIteratorImpl#resolve()
          */
@@ -698,15 +706,15 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
         }
       };
     }
-    
-   /**
+
+    /**
      * Return the role covered by this cross-referencer
      * @return TARGET or REFERENCE
      */
     public Role getRole() {
       return _role;
     }
-    
+
     /**
      * Return whether the given cross-reference should be covered by this cross-referencer
      * @param reference_p a non-null cross-reference
@@ -715,7 +723,7 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
       // Modifiable cross-references only
       return reference_p.isChangeable() && !reference_p.isDerived();
     }
-    
+
     /**
      * @see org.eclipse.emf.ecore.util.EcoreUtil.CrossReferencer#newCollection()
      */
@@ -741,5 +749,5 @@ public class EMappingImpl extends EObjectImpl implements EMapping {
       return false;
     }
   }
-  
+
 } //EMappingImpl

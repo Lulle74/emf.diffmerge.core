@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.impl;
 
 import java.util.Map;
@@ -47,8 +44,8 @@ import org.eclipse.emf.ecore.plugin.EcorePlugin;
  * <!-- end-user-doc -->
  * @generated
  */
-public class DiffdataFactoryImpl extends EFactoryImpl implements
-    DiffdataFactory {
+public class DiffdataFactoryImpl extends EFactoryImpl
+    implements DiffdataFactory {
   /**
    * Creates the default factory implementation.
    * <!-- begin-user-doc -->
@@ -131,8 +128,8 @@ public class DiffdataFactoryImpl extends EFactoryImpl implements
     case DiffdataPackage.ROLE:
       return createRoleFromString(eDataType, initialValue);
     default:
-      throw new IllegalArgumentException(
-          "The datatype '" + eDataType.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
+      throw new IllegalArgumentException("The datatype '" + eDataType.getName() //$NON-NLS-1$
+          + "' is not a valid classifier"); //$NON-NLS-1$
     }
   }
 
@@ -155,8 +152,8 @@ public class DiffdataFactoryImpl extends EFactoryImpl implements
     case DiffdataPackage.ROLE:
       return convertRoleToString(eDataType, instanceValue);
     default:
-      throw new IllegalArgumentException(
-          "The datatype '" + eDataType.getName() + "' is not a valid classifier"); //$NON-NLS-1$ //$NON-NLS-2$
+      throw new IllegalArgumentException("The datatype '" + eDataType.getName() //$NON-NLS-1$
+          + "' is not a valid classifier"); //$NON-NLS-1$
     }
   }
 
@@ -267,8 +264,8 @@ public class DiffdataFactoryImpl extends EFactoryImpl implements
    */
   public IEditableModelScope createIEditableModelScopeFromString(
       EDataType eDataType, String initialValue) {
-    return (IEditableModelScope) super
-        .createFromString(eDataType, initialValue);
+    return (IEditableModelScope) super.createFromString(eDataType,
+        initialValue);
   }
 
   /**

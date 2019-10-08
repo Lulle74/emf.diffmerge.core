@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.diffuidata;
 
 import org.eclipse.emf.ecore.EAttribute;
@@ -296,17 +293,6 @@ public interface UidiffdataPackage extends EPackage {
 	EReference getUIComparison_ActualComparison();
 
 	/**
-	 * Returns the meta object for the reference list '{@link org.eclipse.emf.diffmerge.ui.diffuidata.UIComparison#getDifferencesToIgnore <em>Differences To Ignore</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the reference list '<em>Differences To Ignore</em>'.
-	 * @see org.eclipse.emf.diffmerge.ui.diffuidata.UIComparison#getDifferencesToIgnore()
-	 * @see #getUIComparison()
-	 * @generated
-	 */
-	EReference getUIComparison_DifferencesToIgnore();
-
-	/**
 	 * Returns the meta object for the containment reference '{@link org.eclipse.emf.diffmerge.ui.diffuidata.UIComparison#getLastActionSelection <em>Last Action Selection</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -498,14 +484,6 @@ public interface UidiffdataPackage extends EPackage {
 		 * @generated
 		 */
 		EReference UI_COMPARISON__ACTUAL_COMPARISON = eINSTANCE.getUIComparison_ActualComparison();
-
-		/**
-		 * The meta object literal for the '<em><b>Differences To Ignore</b></em>' reference list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference UI_COMPARISON__DIFFERENCES_TO_IGNORE = eINSTANCE.getUIComparison_DifferencesToIgnore();
 
 		/**
 		 * The meta object literal for the '<em><b>Last Action Selection</b></em>' containment reference feature.

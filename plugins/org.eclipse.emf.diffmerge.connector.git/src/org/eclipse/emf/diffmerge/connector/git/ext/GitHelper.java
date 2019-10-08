@@ -1,9 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2015-2017 Intel Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2015-2019 Intel Corporation and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Stephane Bouchet (Intel Corporation) - initial API and implementation
@@ -16,14 +17,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.egit.core.Activator;
 import org.eclipse.egit.core.project.RepositoryMapping;
-import org.eclipse.egit.ui.internal.revision.LocalFileRevision;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.diffmerge.connector.git.EMFDiffMergeGitConnectorPlugin;
 import org.eclipse.emf.diffmerge.connector.git.Messages;
 import org.eclipse.jgit.errors.NoWorkTreeException;
@@ -96,12 +96,9 @@ public final class GitHelper {
    */
   public Repository getRepository(IFileRevision revision_p) {
     if (revision_p != null) {
-      IPath revisionPath = new Path(revision_p.getURI().toString());
-      if (!revisionPath.isAbsolute())
+      IPath revisionPath = toPath(revision_p);
+      if (revisionPath != null && !revisionPath.isAbsolute()) {
         return getRepository(revisionPath);
-      else if (revision_p instanceof LocalFileRevision) {
-        IFile file = ((LocalFileRevision)revision_p).getFile();
-        return getRepository(file.getFullPath());
       }
       EMFDiffMergeGitConnectorPlugin.getDefault().getLog().log(new Status(IStatus.ERROR,
           EMFDiffMergeGitConnectorPlugin.getDefault().getPluginId(),
@@ -165,12 +162,9 @@ public final class GitHelper {
    */
   public boolean isConflicting(Repository repository_p,
       IFileRevision revision_p) throws NoWorkTreeException, IOException {
-    IPath revisionPath = new Path(revision_p.getURI().toString());
-    if (!revisionPath.isAbsolute())
+    IPath revisionPath = toPath(revision_p);
+    if (!revisionPath.isAbsolute()) {
       return isConflicting(repository_p, revisionPath.toString());
-    else if (revision_p instanceof LocalFileRevision) {
-      IFile file = ((LocalFileRevision)revision_p).getFile();
-      return isConflicting(repository_p, file.getFullPath().makeRelative().toString());
     }
     EMFDiffMergeGitConnectorPlugin.getDefault().getLog().log(new Status(IStatus.ERROR,
         EMFDiffMergeGitConnectorPlugin.getDefault().getPluginId(),
@@ -188,6 +182,21 @@ public final class GitHelper {
   public boolean isConflicting(Repository repository_p, String path_p)
       throws NoWorkTreeException, IOException {
     return repository_p.readDirCache().getEntry(path_p).getStage() > 0;
+  }
+  
+  /**
+   * Return an Eclipse path for the given file revision
+   * @param revision_p a non-null file revision
+   * @return a potentially null path
+   */
+  public IPath toPath(IFileRevision revision_p) {
+    IPath result = null;
+    java.net.URI uri = revision_p.getURI();
+    if (uri != null) {
+      String uriString = URI.decode(uri.toString());
+      result = new Path(uriString);
+    }
+    return result;
   }
   
 }

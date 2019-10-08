@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.impl.scopes;
 
 import java.io.IOException;
@@ -28,8 +25,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 
 /**
- * A single-resource model scope covering the full EMF containment subtree of a given
- * element.
+ * A scope covering the full EMF containment subtree of a given element.
  * The root cannot be removed from the scope and the load/unload life-cycle is not handled.
  * EMF undo/redo is supported because the local state never changes.
  * Complete deletion of elements which are cross-referenced outside the scope is not supported.
@@ -80,7 +76,7 @@ implements IPersistentModelScope.Editable {
    * @see org.eclipse.emf.diffmerge.api.scopes.IModelScope#getContents()
    */
   public List<EObject> getContents() {
-    return Collections.singletonList(getRoot());
+    return getRawContents();
   }
   
   /**
@@ -105,6 +101,13 @@ implements IPersistentModelScope.Editable {
    */
   public Resource getHoldingResource() {
     return getRoot().eResource();
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.api.scopes.IPersistentModelScope#getRawContents()
+   */
+  public List<EObject> getRawContents() {
+    return Collections.singletonList(getRoot());
   }
   
   /**

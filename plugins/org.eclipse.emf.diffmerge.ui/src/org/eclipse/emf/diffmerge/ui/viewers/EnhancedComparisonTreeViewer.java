@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2014-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2014-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import org.eclipse.emf.diffmerge.ui.Messages;
@@ -39,6 +36,15 @@ public class EnhancedComparisonTreeViewer extends HeaderViewer<ComparisonTreeVie
   }
   
   /**
+   * @see org.eclipse.emf.diffmerge.ui.viewers.HeaderViewer#createHeaderContent(org.eclipse.swt.widgets.Composite)
+   */
+  @Override
+  protected void createHeaderContent(Composite parent_p) {
+    super.createHeaderContent(parent_p);
+    setHeaderText(getDefaultHeaderText());
+  }
+  
+  /**
    * @see org.eclipse.emf.diffmerge.ui.viewers.HeaderViewer#createImageLabel(org.eclipse.swt.widgets.Composite)
    */
   @Override
@@ -61,7 +67,6 @@ public class EnhancedComparisonTreeViewer extends HeaderViewer<ComparisonTreeVie
   protected Label createTextLabel(Composite parent_p) {
     Label result = super.createTextLabel(parent_p);
     result.setFont(UIUtil.getBold(result.getFont()));
-    result.setText(getDefaultHeaderText());
     return result;
   }
   

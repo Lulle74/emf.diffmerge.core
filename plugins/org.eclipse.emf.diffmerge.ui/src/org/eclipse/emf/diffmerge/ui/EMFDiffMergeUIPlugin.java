@@ -52,23 +52,38 @@ public class EMFDiffMergeUIPlugin extends Plugin {
   private static BundleContext context;
 
   /** The default file extension for UI diff models */
-  public static final String UI_DIFF_DATA_FILE_EXTENSION = DiffuidataPackage.eNAME;
+  public static final String UI_DIFF_DATA_FILE_EXTENSION = "edm"; //$NON-NLS-1$
   
   /** Identifiers for UI images */
-  @SuppressWarnings("javadoc")
-  public static enum ImageID {
-    CHECKED, CHECKED_DISABLED, CHECKIN_ACTION, CHECKOUT_ACTION, COLLAPSEALL, CONFLICT_STAT, DELETE,
-    DOWN, EMPTY, EXPANDALL, FILTER, IMG_TOOL_COPY, INC_STAT, INC_ADD_STAT, INC_REM_STAT, LEFT, LOCK, LOCK_CLOSED,
-    LOCK_OPEN, MODIFIED_STAT, NEXT_CHANGE_NAV, NEXT_DIFF_NAV, OUT_STAT, OUT_ADD_STAT, OUT_REM_STAT,
+  @SuppressWarnings({"javadoc", "nls"})
+  public enum ImageID {
+    CHECKED, CHECKED_DISABLED, CHECKIN_ACTION, CHECKOUT_ACTION, COLLAPSEALL, COMPARE, CONFLICT_STAT,
+    DELETE, DOWN, EMPTY, EXPANDALL, FILTER, IMG_OBJ_FILE, IMG_TOOL_COPY, GIT_ADDED(true), GIT_DIRTY(true), GIT_REMOVED(true),
+    GIT_STAGED(true), INC_STAT, INC_ADD_STAT, INC_REM_STAT, LEFT, LOCK, LOCK_CLOSED, LOCK_OPEN,
+    MODIFIED_STAT, NEXT_CHANGE_NAV, NEXT_DIFF_NAV, OUT_STAT, OUT_ADD_STAT, OUT_REM_STAT,
     PLUS, PREV_CHANGE_NAV, PREV_DIFF_NAV, REDO, RIGHT, SHOW, SORT, SWAP, SYNCED, TREE, UNCHECKED,
-    UNCHECKED_DISABLED, UNDO, UP, UPDATE, VIEW_MENU, WARNING }
-  
-  /** Identifiers for colors according to the side to which a difference presence is relative */
-  @SuppressWarnings("javadoc")
-  public static enum DifferenceColorKind {
-    LEFT, RIGHT, BOTH, NONE,
-    CONFLICT, DEFAULT
+    UNCHECKED_DISABLED, UNDO, UP, UPDATE, VIEW_MENU, WARNING;
+    /** Whether the image file is a PNG instead of a GIF */
+    private boolean _isPNG;
+    /** Default constructor */
+    private ImageID() {
+      this(false);
+    }
+    /** Complete constructor */
+    private ImageID(boolean isPNG_p) {
+      _isPNG = isPNG_p;
+    }
+    /**
+     * Return the short name of the corresponding image file
+     * @return a non-null, non-empty string
+     */
+    public String toImageFileName() {
+      String ext = _isPNG? "png": "gif";
+      String result = name().toLowerCase() + '.' + ext;
+      return result;
+    }
   }
+  
   
   /** The local path to icons */
   protected static final String ICON_PATH = "icons/full/"; //$NON-NLS-1$
@@ -143,96 +158,6 @@ public class EMFDiffMergeUIPlugin extends Plugin {
   }
   
   /**
-   * Return the color kind that corresponds to the given difference kind
-   * @param originKind_p a potentially null difference kind
-   * @return a non-null color kind
-   */
-  public DifferenceColorKind getDifferenceColorKind(DifferenceKind originKind_p) {
-    DifferenceColorKind result;
-    if (originKind_p == null) {
-      result = DifferenceColorKind.DEFAULT;
-    } else {
-      switch (originKind_p) {
-        case NONE:
-          result = DifferenceColorKind.NONE; break;
-        case CONFLICT:
-          result = DifferenceColorKind.CONFLICT; break;
-        case MODIFIED: case FROM_LEFT: case FROM_RIGHT: case FROM_BOTH:
-          result = DifferenceColorKind.BOTH; break;
-        case FROM_LEFT_ADD: case FROM_RIGHT_DEL:
-          result = DifferenceColorKind.LEFT; break;
-        case FROM_RIGHT_ADD: case FROM_LEFT_DEL:
-          result = DifferenceColorKind.RIGHT; break;
-        default:
-          result = DifferenceColorKind.DEFAULT; break;
-      }
-    }
-    return result;
-  }
-  
-  /**
-   * Return the image ID that corresponds to the given difference origin kind
-   * @param originKind_p a non-null difference origin kind
-   * @return a potentially null image ID
-   */
-  public ImageID getDifferenceOverlay(DifferenceKind originKind_p) {
-    ImageID result;
-    switch (originKind_p) {
-      case FROM_LEFT:
-        result = ImageID.OUT_STAT; break;
-      case FROM_LEFT_ADD:
-        result = ImageID.OUT_ADD_STAT; break;
-      case FROM_LEFT_DEL:
-        result = ImageID.OUT_REM_STAT; break;
-      case FROM_RIGHT:
-        result = ImageID.INC_STAT; break;
-      case FROM_RIGHT_ADD:
-        result = ImageID.INC_ADD_STAT; break;
-      case FROM_RIGHT_DEL:
-        result = ImageID.INC_REM_STAT; break;
-      case MODIFIED:
-      case FROM_BOTH:
-        result = ImageID.MODIFIED_STAT; break;
-      case CONFLICT:
-        result = ImageID.CONFLICT_STAT; break;
-      default:
-        result = null; break;
-    }
-    return result;
-  }
-  
-  /**
-   * Return the prefix that corresponds to the given difference kind
-   * @param originKind_p a non-null difference origin kind
-   * @return a non-null string
-   */
-  public String getDifferencePrefix(DifferenceKind originKind_p) {
-    String result;
-    switch (originKind_p) {
-      case FROM_LEFT:
-        result = "|> "; break; //$NON-NLS-1$
-      case FROM_LEFT_ADD:
-        result = "+> "; break; //$NON-NLS-1$
-      case FROM_LEFT_DEL:
-        result = "-> "; break; //$NON-NLS-1$
-      case FROM_RIGHT:
-        result = "<| "; break; //$NON-NLS-1$
-      case FROM_RIGHT_ADD:
-        result = "<+ "; break; //$NON-NLS-1$
-      case FROM_RIGHT_DEL:
-        result = "<- "; break; //$NON-NLS-1$
-      case CONFLICT:
-        result = "! "; break; //$NON-NLS-1$
-      case MODIFIED:
-      case FROM_BOTH:
-        result = "| "; break; //$NON-NLS-1$
-      default:
-        result = ""; break; //$NON-NLS-1$
-    }
-    return result;
-  }
-  
-  /**
    * Return the logger for diff/merge events
    * @return a non-null logger
    */
@@ -277,7 +202,7 @@ public class EMFDiffMergeUIPlugin extends Plugin {
   /**
    * Return the image descriptor of the given ID
    * @param id_p a non-null image ID
-   * @return a (normally) non-null image
+   * @return a (normally) non-null image descriptor
    */
   public ImageDescriptor getImageDescriptor(ImageID id_p) {
     ImageDescriptor result = getImageRegistry().getDescriptor(id_p.name());
@@ -346,16 +271,23 @@ public class EMFDiffMergeUIPlugin extends Plugin {
    */
   protected ImageDescriptor registerLocalIcon(ImageID imageID_p, ImageRegistry reg_p) {
     ImageDescriptor result = null;
-    String path = ICON_PATH + imageID_p.name().toLowerCase() + ".gif"; //$NON-NLS-1$
+    String path = ICON_PATH + imageID_p.toImageFileName();
     try {
       result = ImageDescriptor.createFromURL(FileLocator.toFileURL(
           context.getBundle().getEntry(path)));
       if (result == null
           || result == ImageDescriptor.getMissingImageDescriptor()) {
-        // retry. some are png's
-        path = ICON_PATH + imageID_p.name().toLowerCase() + ".png"; //$NON-NLS-1$
-        result = ImageDescriptor.createFromURL(
-            FileLocator.toFileURL(context.getBundle().getEntry(path)));
+        //retry with legacy pattern?
+    	path = ICON_PATH + imageID_p.name().toLowerCase() + ".gif"; //$NON-NLS-1$  
+    	result = ImageDescriptor.createFromURL(FileLocator.toFileURL(
+    	          context.getBundle().getEntry(path)));
+    	if (result == null
+    	          || result == ImageDescriptor.getMissingImageDescriptor()) {
+    		// retry. some are png's
+            path = ICON_PATH + imageID_p.name().toLowerCase() + ".png"; //$NON-NLS-1$
+            result = ImageDescriptor.createFromURL(
+                FileLocator.toFileURL(context.getBundle().getEntry(path)));	
+    	}
       }
 
     } catch (IOException e) {

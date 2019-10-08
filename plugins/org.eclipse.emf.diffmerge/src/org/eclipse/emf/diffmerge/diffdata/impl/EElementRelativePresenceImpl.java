@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.impl;
 
 import org.eclipse.emf.common.notify.Notification;
@@ -31,16 +28,16 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EElementRelativePresenceImpl#getElementMatch <em>Element Match</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EElementRelativePresenceImpl#getPresenceRole <em>Presence Role</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
-public abstract class EElementRelativePresenceImpl extends
-    EMergeableDifferenceImpl implements EElementRelativePresence {
+public abstract class EElementRelativePresenceImpl
+    extends EMergeableDifferenceImpl implements EElementRelativePresence {
   /**
    * The cached value of the '{@link #getElementMatch() <em>Element Match</em>}' reference.
    * <!-- begin-user-doc -->
@@ -89,10 +86,10 @@ public abstract class EElementRelativePresenceImpl extends
    */
   protected EElementRelativePresenceImpl(EComparison comparison_p,
       EMatch match_p, Role presenceRole_p) {
-    this();
-    comparison = comparison_p;
-    elementMatch = match_p;
-    presenceRole = presenceRole_p;
+    super(false);
+    setComparison(comparison_p);
+    setElementMatch(match_p);
+    setPresenceRole(presenceRole_p);
   }
 
   /**
@@ -138,8 +135,36 @@ public abstract class EElementRelativePresenceImpl extends
    * <!-- end-user-doc -->
    * @generated
    */
+  public void setElementMatch(EMatch newElementMatch) {
+    EMatch oldElementMatch = elementMatch;
+    elementMatch = newElementMatch;
+    if (eNotificationRequired())
+      eNotify(new ENotificationImpl(this, Notification.SET,
+          DiffdataPackage.EELEMENT_RELATIVE_PRESENCE__ELEMENT_MATCH,
+          oldElementMatch, elementMatch));
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
   public Role getPresenceRole() {
     return presenceRole;
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  public void setPresenceRole(Role newPresenceRole) {
+    Role oldPresenceRole = presenceRole;
+    presenceRole = newPresenceRole;
+    if (eNotificationRequired())
+      eNotify(new ENotificationImpl(this, Notification.SET,
+          DiffdataPackage.EELEMENT_RELATIVE_PRESENCE__PRESENCE_ROLE,
+          oldPresenceRole, presenceRole));
   }
 
   /**
@@ -158,6 +183,42 @@ public abstract class EElementRelativePresenceImpl extends
       return getPresenceRole();
     }
     return super.eGet(featureID, resolve, coreType);
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  @Override
+  public void eSet(int featureID, Object newValue) {
+    switch (featureID) {
+    case DiffdataPackage.EELEMENT_RELATIVE_PRESENCE__ELEMENT_MATCH:
+      setElementMatch((EMatch) newValue);
+      return;
+    case DiffdataPackage.EELEMENT_RELATIVE_PRESENCE__PRESENCE_ROLE:
+      setPresenceRole((Role) newValue);
+      return;
+    }
+    super.eSet(featureID, newValue);
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  @Override
+  public void eUnset(int featureID) {
+    switch (featureID) {
+    case DiffdataPackage.EELEMENT_RELATIVE_PRESENCE__ELEMENT_MATCH:
+      setElementMatch((EMatch) null);
+      return;
+    case DiffdataPackage.EELEMENT_RELATIVE_PRESENCE__PRESENCE_ROLE:
+      setPresenceRole(PRESENCE_ROLE_EDEFAULT);
+      return;
+    }
+    super.eUnset(featureID);
   }
 
   /**
@@ -187,7 +248,7 @@ public abstract class EElementRelativePresenceImpl extends
     if (eIsProxy())
       return super.toString();
 
-    StringBuffer result = new StringBuffer(super.toString());
+    StringBuilder result = new StringBuilder(super.toString());
     result.append(" (presenceRole: "); //$NON-NLS-1$
     result.append(presenceRole);
     result.append(')');
@@ -221,8 +282,8 @@ public abstract class EElementRelativePresenceImpl extends
    * @generated NOT
    */
   protected final IEditableModelScope getAbsenceScope() {
-    IEditableModelScope result = getComparison().getScope(
-        getPresenceRole().opposite());
+    IEditableModelScope result = getComparison()
+        .getScope(getPresenceRole().opposite());
     assert result != null;
     return result;
   }

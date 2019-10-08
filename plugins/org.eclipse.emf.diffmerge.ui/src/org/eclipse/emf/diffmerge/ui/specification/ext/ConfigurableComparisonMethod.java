@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2013-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2013-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.specification.ext;
 
 
@@ -94,10 +91,7 @@ implements IComparisonConfigurator.Provider {
       IComparisonMethodFactory factory_p) {
     super(leftScopeDef_p, rightScopeDef_p, ancestorScopeDef_p, factory_p);
     _configurators = new ArrayList<IComparisonConfigurator>(createConfigurators());
-    if (__lastComparisonMethodType != null &&
-        __lastComparisonMethodType.isAssignableFrom(getClass())) {
-      update(__lastComparisonConfiguration);
-    }
+    initialize();
   }
   
   /**
@@ -168,12 +162,35 @@ implements IComparisonConfigurator.Provider {
   }
   
   /**
+   * Return the configurator to be applied by default if any
+   * @return a potentially null configurator
+   */
+  public IComparisonConfigurator getDefaultConfigurator() {
+    return CONFIGURATOR_VERSIONS;
+  }
+  
+  /**
    * Return a shell if available
    * @return a potentially null shell (always null if current thread is not the UI thread)
    */
   public Shell getShell() {
     return Display.getCurrent() != null ? Display.getCurrent().getActiveShell()
         : null;
+  }
+  
+  /**
+   * Initialize this comparison method
+   */
+  protected void initialize() {
+    if (__lastComparisonMethodType != null &&
+        __lastComparisonMethodType.isAssignableFrom(getClass())) {
+      update(__lastComparisonConfiguration);
+    } else {
+      IComparisonConfigurator defaultConfigurator = getDefaultConfigurator();
+      if (defaultConfigurator != null) {
+        defaultConfigurator.apply(this);
+      }
+    }
   }
   
   /**

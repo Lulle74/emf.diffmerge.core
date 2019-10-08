@@ -15,6 +15,7 @@
  */
 package org.eclipse.emf.diffmerge.ui.workbench.viewers;
 
+import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.diffdata.EComparison;
 import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.edit.domain.EditingDomain;
@@ -60,6 +61,12 @@ public class EMFDiffNodeE3 extends EMFDiffNode
 	{
 		super( comparison_p, domain_p, isLeftEditionPossible_p, isRightEditionPossible_p );
 	}
+	
+	 public EMFDiffNodeE3(EComparison comparison_p, EditingDomain domain_p,
+		      boolean isLeftEditionPossible_p, boolean isRightEditionPossible_p,
+		      Role leftRole_p) {
+		 super( comparison_p, domain_p, isLeftEditionPossible_p, isRightEditionPossible_p, leftRole_p );
+	 }
 
 	/**
 	 * Return the editor input associated to this node, if any

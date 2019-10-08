@@ -1,17 +1,14 @@
-/**
- * <copyright>
+/*********************************************************************
+ * Copyright (c) 2017-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
- * Copyright (c) 2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.specification.ext;
 
 import java.util.ArrayList;
@@ -21,8 +18,13 @@ import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.AdapterFactory;
 import org.eclipse.emf.diffmerge.api.Role;
+import org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope;
+import org.eclipse.emf.diffmerge.diffdata.EComparison;
+import org.eclipse.emf.diffmerge.diffdata.impl.EComparisonImpl;
+import org.eclipse.emf.diffmerge.ui.setup.AbstractComparisonSetup;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethodFactory;
+import org.eclipse.emf.diffmerge.ui.util.IDiffLabelDecorator;
 import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
 import org.eclipse.emf.diffmerge.ui.viewers.AbstractComparisonViewer;
 import org.eclipse.emf.diffmerge.ui.viewers.ComparisonViewer;
@@ -46,7 +48,8 @@ import org.eclipse.swt.widgets.Composite;
  * A base implementation of IComparisonMethod.
  * @author Olivier Constant
  */
-public abstract class AbstractComparisonMethod implements IComparisonMethod {
+public abstract class AbstractComparisonMethod extends AbstractComparisonSetup
+implements IComparisonMethod {
   
   /** The optional factory that created this comparison method */
   protected IComparisonMethodFactory _factory;
@@ -61,6 +64,11 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
   is entirely dedicated to the comparison */
   protected boolean _isDedicatedEditingDomain;
   
+  /** Whether the comparison and merge scenario is of a "source-target"
+   * kind, that is, differences are relative to the TARGET side and merge may
+   * only occur on that side */
+  private boolean _isDirected;
+  
   /** Whether this comparison method may provide additional information to the end-user */
   private boolean _verbose;
   
@@ -70,9 +78,9 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
    */
   protected AbstractComparisonMethod() {
     _editingDomain = null;
+    _factory = null;
     _isDedicatedEditingDomain = false;
     _initialized = false;
-    _factory = null;
     _verbose = true;
   }
   
@@ -108,18 +116,32 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
   }
   
   /**
+   * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#createComparison(org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope, org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope, org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope)
+   */
+  public EComparison createComparison(IEditableModelScope targetScope_p,
+      IEditableModelScope referenceScope_p, IEditableModelScope ancestorScope_p) {
+    return new EComparisonImpl(targetScope_p, referenceScope_p, ancestorScope_p);
+  }
+  
+  /**
    * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#createComparisonViewer(org.eclipse.swt.widgets.Composite)
    */
   public AbstractComparisonViewer createComparisonViewer(
       Composite parent_p) {
     AbstractComparisonViewer result = doCreateComparisonViewer(parent_p);
     IDifferenceCategoryProvider provider = getCustomCategoryProvider();
-    if (provider != null)
+    if (provider != null) {
       result.setCategoryProvider(provider);
+    }
     if (result instanceof ComparisonViewer) {
       ILabelProvider customLP = getCustomLabelProvider();
-      if (customLP != null)
+      if (customLP != null) {
         ((ComparisonViewer)result).setDelegateLabelProvider(customLP);
+    }
+      IDiffLabelDecorator customLD = getCustomDiffLabelDecorator();
+      if (customLD != null) {
+        ((ComparisonViewer)result).setDiffLabelDecorator(customLD);
+      }
     }
     return result;
   }
@@ -201,6 +223,17 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
   }
   
   /**
+   * Return an optional diff label decorator for customizing the way the diff status
+   * of model elements is represented in comparison widgets.
+   * This operation only has an impact if the viewer created by this comparison method
+   * is a ComparisonViewer.
+   * @return a diff label decorator, or null for the default one
+   */
+  protected IDiffLabelDecorator getCustomDiffLabelDecorator() {
+    return null;
+  }
+  
+  /**
    * Return an optional label provider for customizing the way model elements
    * are represented in comparison widgets. The client is responsible for disposing
    * the label provider when appropriate. This operation only has an impact if the
@@ -252,6 +285,13 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
   }
   
   /**
+   * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#isDirected()
+   */
+  public boolean isDirected() {
+    return _isDirected;
+  }
+  
+  /**
    * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#isThreeWay()
    */
   public boolean isThreeWay() {
@@ -263,6 +303,13 @@ public abstract class AbstractComparisonMethod implements IComparisonMethod {
    */
   public boolean isVerbose() {
     return _verbose;
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod#setDirected(boolean)
+   */
+  public void setDirected(boolean isDirected_p) {
+    _isDirected = isDirected_p;
   }
   
   /**

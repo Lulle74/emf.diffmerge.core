@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import java.util.ArrayList;
@@ -33,9 +30,10 @@ import org.eclipse.emf.diffmerge.api.diff.IReferenceValuePresence;
 import org.eclipse.emf.diffmerge.impl.helpers.AbstractExpensiveOperation;
 import org.eclipse.emf.diffmerge.structures.common.FHashMap;
 import org.eclipse.emf.diffmerge.structures.common.FHashSet;
-import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.DifferenceColorKind;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.ImageID;
 import org.eclipse.emf.diffmerge.ui.Messages;
+import org.eclipse.emf.diffmerge.ui.util.DefaultDiffLabelDecorator;
+import org.eclipse.emf.diffmerge.ui.util.DefaultDiffLabelDecorator.DifferenceColorKind;
 import org.eclipse.emf.diffmerge.ui.util.DelegatingLabelProvider;
 import org.eclipse.emf.diffmerge.ui.util.DiffMergeLabelProvider;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -417,9 +415,8 @@ public class MergeImpactViewer extends Viewer {
     _upperViewer.setContentProvider(new MergeImpactContentProvider(true));
     _lowerViewer.setContentProvider(new MergeImpactContentProvider(false));
     // Label provider
-    MergeImpactLabelProvider lp = new MergeImpactLabelProvider();
-    _upperViewer.setLabelProvider(lp);
-    _lowerViewer.setLabelProvider(lp);
+    _upperViewer.setLabelProvider(new MergeImpactLabelProvider());
+    _lowerViewer.setLabelProvider(new MergeImpactLabelProvider());
     // Sorter
     ViewerComparator sorter = new ViewerComparator();
     _upperViewer.setComparator(sorter);
@@ -569,7 +566,7 @@ public class MergeImpactViewer extends Viewer {
       else
         result = getInput().isOnTheLeft()? DifferenceColorKind.LEFT:
           DifferenceColorKind.RIGHT;
-      return getInput().getContext().getDifferenceColor(result);
+      return DefaultDiffLabelDecorator.getInstance().getDifferenceColor(result);
     }
     
     /**

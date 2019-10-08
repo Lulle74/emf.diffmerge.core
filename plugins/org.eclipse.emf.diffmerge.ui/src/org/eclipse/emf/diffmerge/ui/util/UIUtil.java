@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.util;
 
 import java.util.ArrayList;
@@ -27,15 +24,15 @@ import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.emf.edit.provider.IItemLabelProvider;
 import org.eclipse.emf.edit.provider.ReflectiveItemProvider;
 import org.eclipse.emf.transaction.util.TransactionUtil;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.action.IMenuCreator;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.TreePath;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -44,7 +41,9 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -66,6 +65,10 @@ public final class UIUtil {
 	  //Forbid instantiation
 	}
 	
+  /** The CompareConfiguration "mirrored" property defined in Neon and later,
+   * explicit here for compatibility with older versions of Eclipse */
+  public static final String CC_MIRRORED_PROPERTY = "MIRRORED"; //$NON-NLS-1$
+  
   /**
    * Create and return a composite within the given one with default characteristics
    * @param parent_p a non-null composite
@@ -81,37 +84,16 @@ public final class UIUtil {
   }
   
   /**
-   * Create a tool item in the given toolbar which displays a drop-down menu 
-   * @param toolbar_p a non-null tool bar
+   * Create a tool item in the given context which displays a drop-down menu 
+   * @param context_p a non-null object
    * @return the non-null menu
    */
-  public static Menu createMenuTool(ToolBar toolbar_p) {
-    ToolItem menuTool = new ToolItem(toolbar_p, SWT.PUSH);
-    menuTool.setImage(EMFDiffMergeUIPlugin.getDefault().getImage(
+  public static MenuManager createMenuTool(IToolBarManager context_p) {
+    MenuDropDownAction action = new MenuDropDownAction(IAction.AS_PUSH_BUTTON);
+    action.setImageDescriptor(EMFDiffMergeUIPlugin.getDefault().getImageDescriptor(
         EMFDiffMergeUIPlugin.ImageID.VIEW_MENU));
-    final Menu result = new Menu(toolbar_p.getShell());
-    menuTool.addSelectionListener(new SelectionAdapter() {
-      /**
-       * @see org.eclipse.swt.events.SelectionAdapter#widgetSelected(org.eclipse.swt.events.SelectionEvent)
-       */
-      @Override
-      public void widgetSelected(SelectionEvent event) {
-          ToolItem item = (ToolItem) event.widget;
-          Rectangle rect = item.getBounds();
-          Point pt = item.getParent().toDisplay(new Point(rect.x, rect.y));
-          result.setLocation(pt.x, pt.y + rect.height);
-          result.setVisible(true);
-      }
-    });
-    menuTool.addDisposeListener(new DisposeListener() {
-      /**
-       * @see org.eclipse.swt.events.DisposeListener#widgetDisposed(org.eclipse.swt.events.DisposeEvent)
-       */
-      public void widgetDisposed(DisposeEvent e) {
-        result.dispose();
-      }
-    });
-    return result;
+    context_p.add(action);
+    return action.getMenuManager();
   }
   
   /**
@@ -123,6 +105,17 @@ public final class UIUtil {
     ToolBar result = new ToolBar(parent_p, SWT.HORIZONTAL | SWT.RIGHT);
     GridData data = new GridData(SWT.RIGHT, SWT.TOP, false, false);
     result.setData(data);
+    return result;
+  }
+  
+  /**
+   * Return the base (non-bold, non-italic) variant of the given font
+   * @param font_p a non-null font
+   * @return a non-null font
+   */
+  public static Font getBase(Font font_p) {
+    FontData data = font_p.getFontData()[0];
+    Font result = JFaceResources.getFontRegistry().get(data.getName());
     return result;
   }
   
@@ -198,62 +191,6 @@ public final class UIUtil {
   }
   
   /**
-   * Add the given dispose listener to the given tool/menu item
-   * @param item_p a non-null tool item or menu item
-   * @param listener_p a non-null listener
-   */
-  public static void itemAddDisposeListener(Item item_p, DisposeListener listener_p) {
-    assert item_p instanceof ToolItem || item_p instanceof MenuItem;
-    if (item_p instanceof ToolItem) {
-      ((ToolItem)item_p).addDisposeListener(listener_p);
-    } else {
-      ((MenuItem)item_p).addDisposeListener(listener_p);
-    }
-  }
-  
-  /**
-   * Add the given selection listener to the given tool/menu item
-   * @param item_p a non-null tool item or menu item
-   * @param listener_p a non-null listener
-   */
-  public static void itemAddSelectionListener(Item item_p, SelectionListener listener_p) {
-    assert item_p instanceof ToolItem || item_p instanceof MenuItem;
-    if (item_p instanceof ToolItem) {
-      ((ToolItem)item_p).addSelectionListener(listener_p);
-    } else {
-      ((MenuItem)item_p).addSelectionListener(listener_p);
-    }
-  }
-  
-  /**
-   * Create an item in the given parent context with the given index and return it
-   * @param context_p a non-null tool bar or menu
-   * @param index_p a positive index or null
-   * @param style_p an SWT style
-   * @return a non-null tool/menu item
-   */
-  public static Item itemCreate(Widget context_p, int style_p, Integer index_p) {
-    assert context_p instanceof ToolBar || context_p instanceof Menu;
-    Item result;
-    if (context_p instanceof ToolBar) {
-      ToolBar parent = (ToolBar)context_p;
-      if (index_p == null) {
-        result = new ToolItem(parent, style_p);
-      } else {
-        result = new ToolItem(parent, style_p, index_p.intValue());
-      }
-    } else {
-      Menu parent = (Menu)context_p;
-      if (index_p == null) {
-        result = new MenuItem(parent, style_p);
-      } else {
-        result = new MenuItem(parent, style_p, index_p.intValue());
-      }
-    }
-    return result;
-  }
-  
-  /**
    * Return whether the given tool/menu item is selected
    * @param item_p a non-null tool item or menu item
    */
@@ -283,34 +220,6 @@ public final class UIUtil {
   }
   
   /**
-   * Set the text of the given tool/menu item. If a tool item,
-   * then the tool tip is affected instead.
-   * @param item_p a non-null tool item or menu item
-   * @param text_p a potentially null string
-   */
-  public static void itemSetText(Item item_p, String text_p) {
-    assert item_p instanceof ToolItem || item_p instanceof MenuItem;
-    if (item_p instanceof ToolItem) {
-      ((ToolItem)item_p).setToolTipText(text_p);
-    } else {
-      ((MenuItem)item_p).setText(text_p);
-    }
-  }
-  
-  /**
-   * Set the tool tip text of the given tool/menu item. If a tool item,
-   * then this operation has no impact - use itemSetText instead.
-   * @param item_p a non-null tool item or menu item
-   * @param tooltip_p a potentially null string
-   */
-  public static void itemSetToolTipText(Item item_p, String tooltip_p) {
-    assert item_p instanceof ToolItem || item_p instanceof MenuItem;
-    if (item_p instanceof MenuItem) {
-      ((MenuItem)item_p).setToolTipText(tooltip_p);
-    }
-  }
-  
-	/**
 	 * Return a UI variant of the representation of the given URI
 	 * @param uri_p a potentially null URI
 	 * @return a string which is null iff uri_p is null
@@ -355,35 +264,6 @@ public final class UIUtil {
   
   
   /**
-   * A comparator based on labels of objects
-   */
-  public static class LabelBasedComparator implements Comparator<Object> {
-    
-    /** The label provider whose labels define the ordering */
-    private final ILabelProvider _labelProvider;
-    
-    /**
-     * Constructor
-     * @param labelProvider_p the non-null label provider whose labels define the ordering
-     */
-    public LabelBasedComparator(ILabelProvider labelProvider_p) {
-      _labelProvider = labelProvider_p;
-    }
-    
-    /**
-     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-     */
-    public int compare(Object o1_p, Object o2_p) {
-      String label1 = _labelProvider.getText(o1_p);
-      if (label1 == null) label1 = o1_p.toString();
-      String label2 = _labelProvider.getText(o2_p);
-      if (label2 == null) label2 = o2_p.toString();
-      return label1.compareTo(label2);
-    }
-  }
-  
-  
-  /**
    *  A provider for feature and type labels.
    */
   protected static class FormattedTextProvider extends ReflectiveItemProvider {
@@ -419,6 +299,116 @@ public final class UIUtil {
       if (__instance == null)
         __instance = new FormattedTextProvider();
       return __instance;
+    }
+  }
+  
+  /**
+   * A comparator based on labels of objects.
+   */
+  public static class LabelBasedComparator implements Comparator<Object> {
+    
+    /** The label provider whose labels define the ordering */
+    private final ILabelProvider _labelProvider;
+    
+    /**
+     * Constructor
+     * @param labelProvider_p the non-null label provider whose labels define the ordering
+     */
+    public LabelBasedComparator(ILabelProvider labelProvider_p) {
+      _labelProvider = labelProvider_p;
+    }
+    
+    /**
+     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+     */
+    public int compare(Object o1_p, Object o2_p) {
+      String label1 = _labelProvider.getText(o1_p);
+      if (label1 == null) label1 = o1_p.toString();
+      String label2 = _labelProvider.getText(o2_p);
+      if (label2 == null) label2 = o2_p.toString();
+      return label1.compareTo(label2);
+    }
+  }
+  
+  /**
+   * A drop-down action that shows a menu through a menu manager.
+   * It can be used with a ToolBar Manager or a Menu Manager. In the former case
+   * the action will be represented as a button (drop-down by default, unless otherwise
+   * specified via the constructor), in the latter case as a cascading menu.
+   */
+  public static class MenuDropDownAction extends Action implements IMenuCreator {
+    /** The non-null menu manager */
+    private final MenuManager _menuManager;
+    /**
+     * Default constructor for drop-down style
+     */
+    public MenuDropDownAction() {
+      this(IAction.AS_DROP_DOWN_MENU);
+    }
+    /**
+     * Constructor for custom style
+     * @param style_p a style as defined in IAction
+     */
+    public MenuDropDownAction(int style_p) {
+      super(null, style_p);
+      _menuManager = new MenuManager();
+      setMenuCreator(this);
+    }
+    /**
+     * @see org.eclipse.jface.action.IMenuCreator#dispose()
+     */
+    public void dispose() {
+      if (_menuManager != null) {
+        _menuManager.dispose();
+      }
+    }
+    /**
+     * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Control)
+     */
+    public Menu getMenu(Control parent_p) {
+      Menu result = _menuManager.createContextMenu(parent_p); // Does not recreate
+      parent_p.setMenu(result);
+      return result;
+    }
+    /**
+     * @see org.eclipse.jface.action.IMenuCreator#getMenu(org.eclipse.swt.widgets.Menu)
+     */
+    public Menu getMenu(Menu parent_p) {
+      Menu existingMenu = _menuManager.getMenu();
+      if (existingMenu == null || existingMenu.isDisposed()) {
+        Menu containerMenu = new Menu(parent_p); // Not to be shown
+        _menuManager.fill(containerMenu, -1); // Contribution mechanism will issue copy items
+      }
+      return _menuManager.getMenu();
+    }
+    /**
+     * Return the menu manager for the menu provided by this action
+     * @return a non-null menu manager
+     */
+    public MenuManager getMenuManager() {
+      return _menuManager;
+    }
+    /**
+     * @see org.eclipse.jface.action.Action#runWithEvent(org.eclipse.swt.widgets.Event)
+     */
+    @Override
+    public void runWithEvent(Event event_p) {
+      Widget sourceWidget = event_p.widget;
+      Menu menu = null;
+      if (sourceWidget instanceof ToolItem) {
+        ToolItem item = (ToolItem)sourceWidget;
+        ToolBar toolBar = item.getParent();
+        menu = getMenu(toolBar);
+        Rectangle rect = item.getBounds();
+        Point pt = toolBar.toDisplay(new Point(rect.x, rect.y));
+        menu.setLocation(pt.x, pt.y + rect.height);
+      } else if (sourceWidget instanceof MenuItem) {
+        Menu parentMenu = ((MenuItem)sourceWidget).getMenu();
+        menu = getMenu(parentMenu);
+      }
+      if (menu != null) {
+        menu.setVisible(true);
+      }
     }
   }
   

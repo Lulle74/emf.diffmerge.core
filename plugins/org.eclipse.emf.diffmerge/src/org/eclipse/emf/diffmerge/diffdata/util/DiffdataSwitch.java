@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.util;
 
 import java.util.List;
@@ -28,6 +25,7 @@ import org.eclipse.emf.diffmerge.api.diff.IElementRelativePresence;
 import org.eclipse.emf.diffmerge.api.diff.IMergeableDifference;
 import org.eclipse.emf.diffmerge.api.diff.IReferenceValuePresence;
 import org.eclipse.emf.diffmerge.api.diff.IValuePresence;
+import org.eclipse.emf.diffmerge.diffdata.*;
 import org.eclipse.emf.diffmerge.diffdata.DiffdataPackage;
 import org.eclipse.emf.diffmerge.diffdata.EAttributeValuePresence;
 import org.eclipse.emf.diffmerge.diffdata.EComparison;
@@ -114,9 +112,18 @@ public class DiffdataSwitch<T> {
    */
   protected T doSwitch(int classifierID, EObject theEObject) {
     switch (classifierID) {
+    case DiffdataPackage.EIDENTIFIED: {
+      EIdentified eIdentified = (EIdentified) theEObject;
+      T result = caseEIdentified(eIdentified);
+      if (result == null)
+        result = defaultCase(theEObject);
+      return result;
+    }
     case DiffdataPackage.ECOMPARISON: {
       EComparison eComparison = (EComparison) theEObject;
       T result = caseEComparison(eComparison);
+      if (result == null)
+        result = caseEIdentified(eComparison);
       if (result == null)
         result = caseIEditableComparison(eComparison);
       if (result == null)
@@ -127,6 +134,8 @@ public class DiffdataSwitch<T> {
       EMapping eMapping = (EMapping) theEObject;
       T result = caseEMapping(eMapping);
       if (result == null)
+        result = caseEIdentified(eMapping);
+      if (result == null)
         result = caseIEditableMapping(eMapping);
       if (result == null)
         result = defaultCase(theEObject);
@@ -136,6 +145,8 @@ public class DiffdataSwitch<T> {
       EMatch eMatch = (EMatch) theEObject;
       T result = caseEMatch(eMatch);
       if (result == null)
+        result = caseEIdentified(eMatch);
+      if (result == null)
         result = caseIEditableMatch(eMatch);
       if (result == null)
         result = defaultCase(theEObject);
@@ -144,6 +155,8 @@ public class DiffdataSwitch<T> {
     case DiffdataPackage.EMERGEABLE_DIFFERENCE: {
       EMergeableDifference eMergeableDifference = (EMergeableDifference) theEObject;
       T result = caseEMergeableDifference(eMergeableDifference);
+      if (result == null)
+        result = caseEIdentified(eMergeableDifference);
       if (result == null)
         result = caseIEditableMergeableDifference(eMergeableDifference);
       if (result == null)
@@ -157,6 +170,8 @@ public class DiffdataSwitch<T> {
         result = caseEMergeableDifference(eElementRelativePresence);
       if (result == null)
         result = caseIElementRelativePresence(eElementRelativePresence);
+      if (result == null)
+        result = caseEIdentified(eElementRelativePresence);
       if (result == null)
         result = caseIEditableMergeableDifference(eElementRelativePresence);
       if (result == null)
@@ -175,6 +190,8 @@ public class DiffdataSwitch<T> {
       if (result == null)
         result = caseIElementRelativePresence(eElementPresence);
       if (result == null)
+        result = caseEIdentified(eElementPresence);
+      if (result == null)
         result = caseIEditableMergeableDifference(eElementPresence);
       if (result == null)
         result = defaultCase(theEObject);
@@ -191,6 +208,8 @@ public class DiffdataSwitch<T> {
         result = caseEMergeableDifference(eValuePresence);
       if (result == null)
         result = caseIElementRelativePresence(eValuePresence);
+      if (result == null)
+        result = caseEIdentified(eValuePresence);
       if (result == null)
         result = caseIEditableMergeableDifference(eValuePresence);
       if (result == null)
@@ -213,6 +232,8 @@ public class DiffdataSwitch<T> {
       if (result == null)
         result = caseIElementRelativePresence(eAttributeValuePresence);
       if (result == null)
+        result = caseEIdentified(eAttributeValuePresence);
+      if (result == null)
         result = caseIEditableMergeableDifference(eAttributeValuePresence);
       if (result == null)
         result = defaultCase(theEObject);
@@ -233,6 +254,8 @@ public class DiffdataSwitch<T> {
         result = caseEMergeableDifference(eReferenceValuePresence);
       if (result == null)
         result = caseIElementRelativePresence(eReferenceValuePresence);
+      if (result == null)
+        result = caseEIdentified(eReferenceValuePresence);
       if (result == null)
         result = caseIEditableMergeableDifference(eReferenceValuePresence);
       if (result == null)
@@ -367,6 +390,21 @@ public class DiffdataSwitch<T> {
     default:
       return defaultCase(theEObject);
     }
+  }
+
+  /**
+   * Returns the result of interpreting the object as an instance of '<em>EIdentified</em>'.
+   * <!-- begin-user-doc -->
+   * This implementation returns null;
+   * returning a non-null result will terminate the switch.
+   * <!-- end-user-doc -->
+   * @param object the target of the switch.
+   * @return the result of interpreting the object as an instance of '<em>EIdentified</em>'.
+   * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+   * @generated
+   */
+  public T caseEIdentified(EIdentified object) {
+    return null;
   }
 
   /**

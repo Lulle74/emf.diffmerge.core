@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.specification;
 
 import java.util.Collection;
@@ -32,7 +29,7 @@ public interface IOverridableFactory {
   /**
    * Return the classes that this factory overrides when applicable.
    * This "override" relation must be such that its transitive
-   * closure is antisymmmetric (no "loops"). Only instances of the returned classes are
+   * closure is antisymmetric (no "loops"). Only instances of the returned classes are
    * concerned, not instances of sub-classes.
    * @return a non-null, potentially empty, non-modifiable collection
    */

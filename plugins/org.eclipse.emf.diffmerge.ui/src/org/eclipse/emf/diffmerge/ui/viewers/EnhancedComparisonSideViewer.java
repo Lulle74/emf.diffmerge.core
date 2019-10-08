@@ -1,24 +1,26 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2014-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2014-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import org.eclipse.emf.diffmerge.api.scopes.IModelScope;
 import org.eclipse.emf.diffmerge.ui.util.DiffMergeLabelProvider;
+import org.eclipse.jface.viewers.IBaseLabelProvider;
+import org.eclipse.jface.viewers.IColorProvider;
+import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ITreeSelection;
-import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 
 
@@ -54,11 +56,38 @@ public class EnhancedComparisonSideViewer extends HeaderViewer<ComparisonSideVie
   }
   
   /**
+   * Refresh this viewer ignoring the inner viewer
+   */
+  protected void doRefresh() {
+    EMFDiffNode input = getInput();
+    IModelScope scope = getInnerViewer().getSideScope();
+    Label textLabel = getTextLabel();
+    if (textLabel != null) {
+      updateHeaderText(textLabel, input, scope);
+    }
+    Label imageLabel = getImageLabel();
+    if (imageLabel != null) {
+      updateHeaderImage(imageLabel, input, scope);
+    }
+  }
+  
+  /**
    * Return a label provider for header information
    * @return a non-null label provider
    */
-  protected LabelProvider getHeaderLabelProvider() {
-    return DiffMergeLabelProvider.getInstance();
+  protected ILabelProvider getHeaderLabelProvider() {
+    ILabelProvider result = null;
+    if (getInnerViewer() != null) {
+      // Use LP of inner viewer if available
+      IBaseLabelProvider baseLP = getInnerViewer().getLabelProvider();
+      if (baseLP instanceof ILabelProvider) {
+        result = (ILabelProvider)baseLP;
+      }
+    }
+    if (result == null) {
+      result = DiffMergeLabelProvider.getInstance();
+    }
+    return result;
   }
   
   /**
@@ -83,16 +112,16 @@ public class EnhancedComparisonSideViewer extends HeaderViewer<ComparisonSideVie
   @Override
   protected void inputChanged(Object input_p, Object oldInput_p) {
     super.inputChanged(input_p, oldInput_p);
-    EMFDiffNode input = getInput();
-    IModelScope scope = getInnerViewer().getSideScope();
-    Label textLabel = getTextLabel();
-    if (textLabel != null) {
-      textLabel.setForeground(getInnerViewer().getSideColor()); // Unrelated to input
-      updateHeaderText(textLabel, input, scope);
-    }
-    Label imageLabel = getImageLabel();
-    if (imageLabel != null)
-      updateHeaderImage(imageLabel, input, scope);
+    doRefresh();
+  }
+  
+  /**
+   * @see org.eclipse.emf.diffmerge.ui.viewers.HeaderViewer#refresh()
+   */
+  @Override
+  public void refresh() {
+    super.refresh();
+    doRefresh();
   }
   
   /**
@@ -104,7 +133,14 @@ public class EnhancedComparisonSideViewer extends HeaderViewer<ComparisonSideVie
    */
   protected void updateHeaderImage(Label headerImageWidget_p,
       EMFDiffNode input_p, IModelScope scope_p) {
-    headerImageWidget_p.setImage(getHeaderLabelProvider().getImage(scope_p));
+    Image image = getHeaderLabelProvider().getImage(scope_p);
+    if (image != headerImageWidget_p.getImage()) {
+      headerImageWidget_p.setImage(image);
+      Control mainControl = getControl();
+      if (mainControl instanceof Composite) {
+        ((Composite)mainControl).layout();
+      }
+    }
   }
   
   /**
@@ -116,7 +152,12 @@ public class EnhancedComparisonSideViewer extends HeaderViewer<ComparisonSideVie
    */
   protected void updateHeaderText(Label headerTextWidget_p,
       EMFDiffNode input_p, IModelScope scope_p) {
-    String label = getHeaderLabelProvider().getText(scope_p);
+    ILabelProvider lp = getHeaderLabelProvider();
+    if (lp instanceof IColorProvider) {
+      Color newColor = ((IColorProvider)lp).getForeground(scope_p);
+      headerTextWidget_p.setForeground(newColor);
+    }
+    String label = lp.getText(scope_p);
     headerTextWidget_p.setText(label);
     headerTextWidget_p.setToolTipText(label);
   }

@@ -1,16 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2016-2017 Intel Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2016-2019 Intel Corporation and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Stephane Bouchet (Intel Corporation) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.emf.diffmerge.connector.git.ext;
-
-import static org.eclipse.egit.core.internal.storage.GitFileRevision.inIndex;
 
 import java.util.List;
 
@@ -49,7 +48,6 @@ public class GitIndexURIConverter extends AbstractGitURIConverter {
    * @see org.eclipse.emf.diffmerge.connector.git.ext.AbstractGitURIConverter#getGitFileRevision(java.lang.String)
    */
   @Override
-  @SuppressWarnings("restriction")
   protected IFileRevision getGitFileRevision(String gitPath_p) {
     return inIndex(getRepository(), gitPath_p);
   }

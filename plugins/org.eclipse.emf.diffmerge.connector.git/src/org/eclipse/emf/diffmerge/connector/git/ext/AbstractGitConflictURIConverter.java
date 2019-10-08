@@ -1,9 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2015-2017 Intel Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2015-2019 Intel Corporation and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Stephane Bouchet (Intel Corporation) - initial API and implementation
@@ -11,9 +12,6 @@
  *    Stephane Bouchet (Intel Corporation) - bug #496397
  *******************************************************************************/
 package org.eclipse.emf.diffmerge.connector.git.ext;
-
-import static org.eclipse.egit.core.internal.storage.GitFileRevision.inCommit;
-import static org.eclipse.egit.core.internal.storage.GitFileRevision.inIndex;
 
 import java.io.IOException;
 
@@ -24,6 +22,7 @@ import org.eclipse.egit.core.RevUtils.ConflictCommits;
 import org.eclipse.emf.diffmerge.connector.git.EMFDiffMergeGitConnectorPlugin;
 import org.eclipse.jgit.dircache.DirCacheEntry;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.team.core.history.IFileRevision;
 
 
@@ -69,12 +68,14 @@ public abstract class AbstractGitConflictURIConverter extends AbstractGitURIConv
       // Current file not conflicting, but root resource is.
       if (DirCacheEntry.STAGE_2 == _conflictRole) {
         return inCommit(
-            getRepository(), conflictCommits.getOurCommit(),gitPath, null);
+            getRepository(), conflictCommits.getOurCommit(), gitPath, null);
       }
       // If Theirs, pick the git ancestor commitid for the current file.
       else if (DirCacheEntry.STAGE_3 == _conflictRole) {
-        return inCommit(
-            getRepository(), conflictCommits.getTheirCommit(), gitPath, null);
+        RevCommit commit = conflictCommits.getTheirCommit();
+        if (commit == null)
+          commit = conflictCommits.getOurCommit();
+        return inCommit(getRepository(), commit, gitPath, null);
       }
     } catch (IOException e) {
       EMFDiffMergeGitConnectorPlugin.getDefault().getLog().log(new Status(

@@ -1,22 +1,19 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.log;
 
-import org.eclipse.emf.diffmerge.api.IComparison;
 import org.eclipse.emf.diffmerge.api.IMatch;
 import org.eclipse.emf.diffmerge.api.Role;
+import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.XMLResource;
@@ -31,24 +28,24 @@ public abstract class AbstractLogEvent {
   /** A string representing an arrow in ASCII style */
   protected static final String ARROW = " -> "; //$NON-NLS-1$
   
-  /** The non-null comparison */
-  private final IComparison _comparison;
+  /** The non-null diff node */
+  private final EMFDiffNode _node;
   
   
   /**
    * Constructor
-   * @param comparison_p a non-null comparison
+   * @param node_p a non-null diff node
    */
-  protected AbstractLogEvent(IComparison comparison_p) {
-    _comparison = comparison_p;
+  protected AbstractLogEvent(EMFDiffNode node_p) {
+    _node = node_p;
   }
   
   /**
    * Return the comparison to which this event is relative
    * @return a non-null comparison
    */
-  public IComparison getComparison() {
-    return _comparison;
+  public EMFDiffNode getDiffNode() {
+    return _node;
   }
   
   /**

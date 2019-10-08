@@ -1,32 +1,25 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
-import org.eclipse.emf.diffmerge.api.IMatch;
 import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.api.scopes.IModelScope;
-import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.DifferenceColorKind;
-import org.eclipse.emf.diffmerge.ui.util.DelegatingLabelProvider;
-import org.eclipse.emf.diffmerge.ui.util.DifferenceKind;
+import org.eclipse.emf.diffmerge.ui.util.DiffDecoratingLabelProvider;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.ITreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 
@@ -87,16 +80,6 @@ public class ComparisonSideViewer extends TreeViewer implements IComparisonSideV
   @Override
   public ITreeSelection getSelection() {
     return (ITreeSelection)super.getSelection();
-  }
-  
-  /**
-   * Return the color that identifies the side of this viewer
-   * @return a potentially null color
-   */
-  public Color getSideColor() {
-    return getInput() == null? null:
-      getInput().getDifferenceColor(
-        isLeftSide()? DifferenceColorKind.LEFT: DifferenceColorKind.RIGHT);
   }
   
   /**
@@ -198,29 +181,21 @@ public class ComparisonSideViewer extends TreeViewer implements IComparisonSideV
   /**
    * The label provider for this viewer.
    */
-  protected class LabelProvider extends DelegatingLabelProvider {
-    
+  protected class LabelProvider extends DiffDecoratingLabelProvider {
     /**
-     * @see org.eclipse.emf.diffmerge.ui.util.DelegatingLabelProvider#getForeground(java.lang.Object)
+     * @see org.eclipse.emf.diffmerge.ui.util.DiffDecoratingLabelProvider#getDiffNode()
      */
     @Override
-    public Color getForeground(Object element_p) {
-      EObject element = (EObject)element_p;
-      IMatch match = getInput().getActualComparison().getMapping().getMatchFor(
-          element, getSideRole());
-      Color result;
-      if (match != null) {
-        DifferenceKind kind = getInput().getCategoryManager().getDifferenceKind(match);
-        if (!kind.isNeutral())
-          result = getSideColor();
-        else
-          result = getInput().getDifferenceColor(DifferenceColorKind.NONE);
-      } else {
-        result = super.getForeground(element_p);
-      }
-      return result;
+    protected EMFDiffNode getDiffNode() {
+      return getInput();
     }
-    
+    /**
+     * @see org.eclipse.emf.diffmerge.ui.util.DiffDecoratingLabelProvider#getSide()
+     */
+    @Override
+    protected Role getSide() {
+      return getSideRole();
+    }
   }
   
 }

@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.util;
 
 
@@ -61,6 +58,24 @@ public enum DifferenceKind {
   }
   
   /**
+   * Return whether the receiver is a non-conflicting modification, i.e.,
+   * neither an addition nor a deletion
+   */
+  public boolean isModification() {
+    boolean result;
+    switch (this) {
+      case FROM_LEFT:
+      case FROM_RIGHT:
+      case FROM_BOTH:
+      case MODIFIED:
+        result = true; break;
+      default:
+        result = false; break;
+    }
+    return result;
+  }
+  
+  /**
    * Return whether the receiver is a pure deletion
    */
   public boolean isDeletion() {
@@ -99,7 +114,7 @@ public enum DifferenceKind {
   }
   
   /**
-   * Return whether the receiver is not concerned by any side
+   * Return whether the receiver is not directly concerned by differences
    */
   public boolean isNeutral() {
     return this == COUNTED || this == NONE;

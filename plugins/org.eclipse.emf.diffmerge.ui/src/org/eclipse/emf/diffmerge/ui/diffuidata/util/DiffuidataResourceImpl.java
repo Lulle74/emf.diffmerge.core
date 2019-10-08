@@ -1,22 +1,18 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.diffuidata.util;
 
 import org.eclipse.emf.common.util.URI;
-
-import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
+import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,16 +21,16 @@ import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
  * @see org.eclipse.emf.diffmerge.ui.diffuidata.util.DiffuidataResourceFactoryImpl
  * @generated
  */
-public class DiffuidataResourceImpl extends ResourceImpl {
-	/**
-	 * Creates an instance of the resource.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param uri_p the URI of the new resource.
-	 * @generated
-	 */
-	public DiffuidataResourceImpl(URI uri_p) {
-		super(uri_p);
-	}
+public class DiffuidataResourceImpl extends XMIResourceImpl {
+  /**
+   * Creates an instance of the resource.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @param uri_p the URI of the new resource.
+   * @generated
+   */
+  public DiffuidataResourceImpl(URI uri_p) {
+    super(uri_p);
+  }
 
 } //DiffuidataResourceImpl

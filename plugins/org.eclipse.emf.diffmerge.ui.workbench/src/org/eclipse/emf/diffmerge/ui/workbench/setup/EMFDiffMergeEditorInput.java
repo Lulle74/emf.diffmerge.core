@@ -1,17 +1,15 @@
-/**
- * <copyright>
+
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.workbench.setup;
 
 import java.lang.reflect.InvocationTargetException;
@@ -34,19 +32,19 @@ import org.eclipse.emf.diffmerge.api.Role;
 import org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope;
 import org.eclipse.emf.diffmerge.api.scopes.IPersistentModelScope;
 import org.eclipse.emf.diffmerge.diffdata.EComparison;
-import org.eclipse.emf.diffmerge.diffdata.impl.EComparisonImpl;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
 import org.eclipse.emf.diffmerge.ui.Messages;
 import org.eclipse.emf.diffmerge.ui.diffuidata.UIComparison;
-import org.eclipse.emf.diffmerge.ui.diffuidata.util.UidiffdataResourceFactoryImpl;
 import org.eclipse.emf.diffmerge.ui.specification.IComparisonMethod;
 import org.eclipse.emf.diffmerge.ui.specification.IModelScopeDefinition;
 import org.eclipse.emf.diffmerge.ui.util.InconsistencyDialog;
 import org.eclipse.emf.diffmerge.ui.util.MiscUtil;
+import org.eclipse.emf.diffmerge.ui.util.MiscUtil.ExtendedUnloader;
 import org.eclipse.emf.diffmerge.ui.viewers.AbstractComparisonViewer;
 import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.diffmerge.ui.viewers.SelectionBridge;
 import org.eclipse.emf.diffmerge.ui.workbench.specification.ext.IComparisonMethodE3;
+import org.eclipse.emf.diffmerge.ui.workbench.util.ExtendedUnloaderE3;
 import org.eclipse.emf.diffmerge.ui.workbench.viewers.EMFDiffNodeE3;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -95,7 +93,8 @@ import org.eclipse.ui.views.properties.PropertySheet;
  * @see CompareEditorInput
  * @author Olivier Constant
  */
-public class EMFDiffMergeEditorInput extends CompareEditorInput {
+public class EMFDiffMergeEditorInput extends CompareEditorInput
+implements IEditingDomainProvider {
   
   /** The non-null (unless disposed) comparison method **/
   protected IComparisonMethod _comparisonMethod;
@@ -127,9 +126,6 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   /** The (initially null) command stack listener on the editing domain, if any */
   protected CommandStackListener _commandStackListener;
   
-  /** The non-null (unless disposed) selection bridge between the viewer and the workbench site */
-  protected SelectionBridge _selectionBridge;
-  
   /** The (initially null) compare navigator for the workbench navigation buttons */
   private ICompareNavigator _navigator;
   
@@ -148,7 +144,6 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
     _foundDifferences = true;
     _isDirty = false;
     _navigator = createNavigator();
-    _selectionBridge = new SelectionBridge();
     initializeCompareConfiguration();
   }
   
@@ -165,35 +160,9 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    * is not consistent
    * @param comparison_p a potentially null comparison
    */
-  public void checkInconsistency(EComparison comparison_p) {
+  public void checkInconsistency(IComparison comparison_p) {
     if (comparison_p != null && !comparison_p.isConsistent())
       handleInconsistency(comparison_p);
-  }
-  
-  /**
-   * Ensure that the selection provider of the workbench site is the intended one
-   */
-  protected void checkSelectionProvider() {
-    final IWorkbenchSite site = getSite();
-    if (site != null && site.getSelectionProvider() != _selectionBridge) {
-      site.setSelectionProvider(_selectionBridge);
-      // Eclipse 4.x compatibility layer workaround: selection changed event propagation
-      ISelectionChangedListener selectionChangedListener = new ISelectionChangedListener() {
-        /**
-         * @see org.eclipse.jface.viewers.ISelectionChangedListener#selectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)
-         */
-        public void selectionChanged(SelectionChangedEvent event_p) {
-          // Force propagation to selection listeners through the selection service
-          IWorkbenchWindow window = site.getWorkbenchWindow();
-          if (window != null && !window.getWorkbench().isClosing()) {
-            ISelectionService service = window.getSelectionService();
-            if (service instanceof ISelectionChangedListener)
-              ((ISelectionChangedListener)service).selectionChanged(event_p);
-          }
-        }
-      };
-      _selectionBridge.addSelectionChangedListener(selectionChangedListener);
-    }
   }
   
   /**
@@ -202,7 +171,6 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   @Override
   protected void contentsCreated() {
     super.contentsCreated();
-    checkSelectionProvider();
     _viewer.getControl().addDisposeListener(new DisposeListener() {
       /**
        * @see org.eclipse.swt.events.DisposeListener#widgetDisposed(org.eclipse.swt.events.DisposeEvent)
@@ -233,10 +201,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
 		else {
 			_viewer = _comparisonMethod.createComparisonViewer( parent_p );
 		}
-		// Plug it to the selection provider
-    if (_selectionBridge != null)
-      _viewer.getMultiViewerSelectionProvider().addSelectionChangedListener(_selectionBridge);
-    _viewer.addPropertyChangeListener(new IPropertyChangeListener() {
+	_viewer.addPropertyChangeListener(new IPropertyChangeListener() {
       /**
        * @see org.eclipse.jface.util.IPropertyChangeListener#propertyChange(org.eclipse.jface.util.PropertyChangeEvent)
        */
@@ -279,7 +244,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    * @return a potentially null string
    */
   protected String createTitle() {
-    Role leftRole = EMFDiffMergeUIPlugin.getDefault().getDefaultLeftRole();
+    Role leftRole = getLeftRole();
     String leftDesc = _comparisonMethod.getModelScopeDefinition(leftRole).getShortLabel();
     String rightDesc = _comparisonMethod.getModelScopeDefinition(leftRole.opposite()).getShortLabel();
     String result = String.format(Messages.EMFDiffMergeEditorInput_Title, leftDesc, rightDesc);
@@ -291,6 +256,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    */
   protected void disposeResources() {
     final EditingDomain domain = getEditingDomain();
+    final ExtendedUnloader unloader = ExtendedUnloaderE3.getDefault();
     final Set<Resource> unloaded = new HashSet<Resource>();
     MiscUtil.executeAndForget(domain, new Runnable() {
       /**
@@ -298,14 +264,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
        */
       public void run() {
         if (_comparisonResource != null) {
-          for (EObject root : _comparisonResource.getContents()) {
-            if (root instanceof UIComparison) {
-              UIComparison uiComparison = (UIComparison)root;
-              uiComparison.dispose();
-            }
-          }
-          _comparisonResource.unload();
-          domain.getResourceSet().getResources().remove(_comparisonResource);
+          unloader.unloadResource(_comparisonResource, true);
           unloaded.add(_comparisonResource);
         }
         if (_leftScope instanceof IPersistentModelScope)
@@ -316,22 +275,10 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
           unloaded.addAll(((IPersistentModelScope)_ancestorScope).unload());
       }
     });
-    if (domain != null)
+    if (domain != null) {
       domain.getCommandStack().flush();
-    if (domain instanceof TransactionalEditingDomain) {
-      for (Resource resource : unloaded) {
-        TransactionUtil.disconnectFromEditingDomain(resource);
-        // Cleaning up Eclipse operation history
-        try {
-          ResourceUndoContext context = new ResourceUndoContext(
-              (TransactionalEditingDomain)domain, resource);
-          PlatformUI.getWorkbench().getOperationSupport().getOperationHistory().dispose(
-              context, true, true, false);
-        } catch (Exception e) {
-          // Workbench being disposed: proceed
-        }
-      }
     }
+    unloader.disconnectResources(domain, unloaded);
   }
   
   /**
@@ -376,6 +323,14 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   }
   
   /**
+   * Return the role that corresponds to the left-hand side
+   * @return TARGET or REFERENCE, or null if disposed
+   */
+  protected Role getLeftRole() {
+    return _comparisonMethod != null? _comparisonMethod.getLeftRole(): null;
+  }
+  
+  /**
    * @see org.eclipse.compare.CompareEditorInput#getNavigator()
    */
   @Override
@@ -403,7 +358,8 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
             if (shell != null) {
               shell.getDisplay().asyncExec(new Runnable() {
                 public void run() {
-                  if (_propertySheetPage != null && !_propertySheetPage.getControl().isDisposed())
+                  if (_propertySheetPage != null && _propertySheetPage.getControl() != null &&
+                      !_propertySheetPage.getControl().isDisposed())
                     _propertySheetPage.refresh();
                 }
               });
@@ -463,23 +419,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
           _propertySheetPage.dispose();
         }
       });
-    if (_viewer != null) {
-      display.asyncExec(new Runnable() {
-        /**
-         * @see java.lang.Runnable#run()
-         */
-        public void run() {
-          _viewer.setSelection(StructuredSelection.EMPTY, false);
-          if (_selectionBridge != null) {
-            _viewer.getMultiViewerSelectionProvider().removeSelectionChangedListener(_selectionBridge);
-            _selectionBridge.clearListeners();
-            _selectionBridge = null;
-          }
           _viewer = null;
-        }
-      });
-    }
-
     if (_commandStackListener != null && getEditingDomain() != null)
       getEditingDomain().getCommandStack().removeCommandStackListener(_commandStackListener);
     super.handleDispose();
@@ -553,13 +493,18 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    */
   protected void initializeCompareConfiguration() {
     CompareConfiguration cc = getCompareConfiguration();
-    cc.setLeftLabel(_comparisonMethod.getModelScopeDefinition(Role.TARGET).getLabel());
-    cc.setRightLabel(_comparisonMethod.getModelScopeDefinition(Role.REFERENCE).getLabel());
+    Role leftRole = getLeftRole();
+    IModelScopeDefinition leftScopeDefinition =
+        _comparisonMethod.getModelScopeDefinition(leftRole);
+    IModelScopeDefinition rightScopeDefinition =
+        _comparisonMethod.getModelScopeDefinition(leftRole.opposite());
     IModelScopeDefinition ancestorDefinition =
       _comparisonMethod.getModelScopeDefinition(Role.ANCESTOR);
+    cc.setLeftLabel(leftScopeDefinition.getLabel());
+    cc.setRightLabel(rightScopeDefinition.getLabel());
     cc.setAncestorLabel((ancestorDefinition == null) ? "" : ancestorDefinition.getLabel()); //$NON-NLS-1$
-    cc.setLeftEditable(_comparisonMethod.getModelScopeDefinition(Role.TARGET).isEditable());
-    cc.setRightEditable(_comparisonMethod.getModelScopeDefinition(Role.REFERENCE).isEditable());
+    cc.setLeftEditable(leftScopeDefinition.isEditable());
+    cc.setRightEditable(rightScopeDefinition.isEditable());
   }
   
   /**
@@ -567,7 +512,11 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    * @return a non-null comparison
    */
   protected EComparison initializeComparison() {
-    EComparison result = new EComparisonImpl(_leftScope, _rightScope, _ancestorScope);
+    boolean leftIsTarget = getLeftRole() == Role.TARGET;
+    IEditableModelScope targetScope = leftIsTarget? _leftScope: _rightScope;
+    IEditableModelScope referenceScope = leftIsTarget? _rightScope: _leftScope;
+    EComparison result = _comparisonMethod.createComparison(
+        targetScope, referenceScope, _ancestorScope);
     return result;
   }
   
@@ -579,15 +528,14 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   protected EMFDiffNode initializeDiffNode(EComparison comparison_p) {
     ResourceSet resourceSet = (getEditingDomain() != null)? getEditingDomain().getResourceSet(): null;
     if (resourceSet != null) {
-      resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put(
-          EMFDiffMergeUIPlugin.UI_DIFF_DATA_FILE_EXTENSION, new UidiffdataResourceFactoryImpl());
-      String resourceURI = "platform:/resource/comparison/comparison." + //$NON-NLS-1$
-          EMFDiffMergeUIPlugin.UI_DIFF_DATA_FILE_EXTENSION;
-      _comparisonResource = resourceSet.createResource(URI.createURI(resourceURI));
+      URI defaultURI = URI.createPlatformResourceURI("comparison/comparison", true); //$NON-NLS-1$
+      defaultURI = defaultURI.appendFileExtension(
+          EMFDiffMergeUIPlugin.UI_DIFF_DATA_FILE_EXTENSION);
+      _comparisonResource = resourceSet.createResource(defaultURI);
     }
     CompareConfiguration cc = getCompareConfiguration();
 		EMFDiffNodeE3 result = new EMFDiffNodeE3(
-        comparison_p, getEditingDomain(), cc.isLeftEditable(), cc.isRightEditable());
+        comparison_p, getEditingDomain(), cc.isLeftEditable(), cc.isRightEditable(), _comparisonMethod.getLeftRole());
     result.setReferenceRole(_comparisonMethod.getTwoWayReferenceRole());
     result.setEditorInput(this);
     return result;
@@ -598,8 +546,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    */
   @Override
   public boolean isSaveNeeded() {
-    // Redefined for compatibility with Indigo and synchronization with workbench views
-    checkSelectionProvider(); // For Eclipse 3.x when canRunAsJob() is true
+    // Redefined for compatibility with Indigo
     return _isDirty;
   }
   
@@ -610,7 +557,7 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
   protected void loadScopes(IProgressMonitor monitor_p) {
     EditingDomain domain = getEditingDomain();
     boolean threeWay = _comparisonMethod.isThreeWay();
-    Role leftRole = EMFDiffMergeUIPlugin.getDefault().getDefaultLeftRole();
+    Role leftRole = getLeftRole();
     String mainTaskName = Messages.EMFDiffMergeEditorInput_Loading;
     SubMonitor loadingMonitor = SubMonitor.convert(
         monitor_p, mainTaskName, threeWay ? 4 : 3);
@@ -767,7 +714,9 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
                * @see java.lang.Runnable#run()
                */
               public void run() {
-                _comparisonResource.getContents().add(getCompareResult().getUIComparison());
+                UIComparison uiComparison = getCompareResult().getUIComparison();
+                _comparisonResource.getContents().add(uiComparison);
+                _comparisonResource.getContents().add(uiComparison.getActualComparison());
               }
             });
             domain.getCommandStack().flush();
@@ -823,12 +772,15 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
    * A slightly enhanced property sheet page for model elements.
    */
   protected static class PropertySheetPage extends ExtendedPropertySheetPage {
+    /** The (initially null) selection service this page is registered to */
+    protected ISelectionService _selectionService;
     /**
      * Constructor
      * @param editingDomain_p a non-null editing domain for the elements
      */
     protected PropertySheetPage(AdapterFactoryEditingDomain editingDomain_p) {
       super(editingDomain_p);
+      _selectionService = null;
     }
     /**
      * @see org.eclipse.emf.edit.ui.view.ExtendedPropertySheetPage#dispose()
@@ -836,9 +788,11 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
     @Override
     public void dispose() {
       super.dispose();
-      // Unregister properties view as selection listener
-      ISelectionService service = getSite().getWorkbenchWindow().getSelectionService();
-      service.removeSelectionListener(this);
+      if (_selectionService != null) {
+        // Unregister properties page as selection listener
+        _selectionService.removeSelectionListener(this);
+        _selectionService = null;
+      }
     }
     /**
      * Return the Properties view if already opened
@@ -868,8 +822,10 @@ public class EMFDiffMergeEditorInput extends CompareEditorInput {
     public void init(IPageSite pageSite_p) {
       super.init(pageSite_p);
       // Register as selection listener
-      ISelectionService service = pageSite_p.getWorkbenchWindow().getSelectionService();
-      service.addSelectionListener(this);
+      _selectionService = pageSite_p.getWorkbenchWindow().getSelectionService();
+      if (_selectionService != null) {
+        _selectionService.addSelectionListener(this);
+      }
     }
     /**
      * @see org.eclipse.emf.edit.ui.view.ExtendedPropertySheetPage#selectionChanged(org.eclipse.ui.IWorkbenchPart, org.eclipse.jface.viewers.ISelection)

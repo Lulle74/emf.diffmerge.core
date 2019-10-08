@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2006-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.sirius;
 
 import java.util.HashMap;
@@ -117,8 +114,9 @@ public class SiriusComparisonMethod extends GMFComparisonMethod {
         if (isThreeWay() && _roleToSession.get(Role.ANCESTOR) != null) {
           // One of them is for the ancestor: use the other
           Session sideSession = _roleToSession.get(Role.TARGET);
-          if (sideSession == null)
+          if (sideSession == null) {
             sideSession = _roleToSession.get(Role.REFERENCE);
+          }
           result = sideSession.getTransactionalEditingDomain(); // sideSession cannot be null
         } else {
           // The two sessions are for the left and right sides:
@@ -163,8 +161,9 @@ public class SiriusComparisonMethod extends GMFComparisonMethod {
   @Override
   protected EditingDomain doGetEditingDomain() {
     EditingDomain result = checkSessions();
-    if (result == null && isVerbose())
+    if (result == null && isVerbose()) {
       showNoEditingDomainWarning();
+    }
     return result;
   }
   
@@ -196,8 +195,9 @@ public class SiriusComparisonMethod extends GMFComparisonMethod {
       Session roleSession = _roleToSession.get(role_p);
       if (roleSession != null) {
         EditingDomain sessionDomain = roleSession.getTransactionalEditingDomain();
-        if (sessionDomain != null)
+        if (sessionDomain != null) {
           result = sessionDomain.getResourceSet();
+        }
       }
     }
     return result;

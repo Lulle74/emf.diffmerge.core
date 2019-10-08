@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.impl;
 
 import java.util.Collection;
@@ -69,7 +66,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.EObjectImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -77,6 +73,7 @@ import org.eclipse.emf.ecore.impl.EObjectImpl;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EComparisonImpl#getAncestorScope <em>Ancestor Scope</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EComparisonImpl#getReferenceScope <em>Reference Scope</em>}</li>
@@ -86,11 +83,10 @@ import org.eclipse.emf.ecore.impl.EObjectImpl;
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EComparisonImpl#getLastMergePolicy <em>Last Merge Policy</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.impl.EComparisonImpl#getMapping <em>Mapping</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
-public class EComparisonImpl extends EObjectImpl implements EComparison {
+public class EComparisonImpl extends EIdentifiedImpl implements EComparison {
   /**
    * The default value of the '{@link #getAncestorScope() <em>Ancestor Scope</em>}' attribute.
    * <!-- begin-user-doc -->
@@ -260,11 +256,12 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
    * @generated NOT
    */
   public EComparisonImpl(IEditableModelScope targetScope_p,
-      IEditableModelScope referenceScope_p, IEditableModelScope ancestorScope_p) {
+      IEditableModelScope referenceScope_p,
+      IEditableModelScope ancestorScope_p) {
     this();
-    targetScope = targetScope_p;
-    referenceScope = referenceScope_p;
-    ancestorScope = ancestorScope_p;
+    setTargetScope(targetScope_p);
+    setReferenceScope(referenceScope_p);
+    setAncestorScope(ancestorScope_p);
     setMapping(new EMappingImpl());
   }
 
@@ -457,12 +454,12 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
       NotificationChain msgs = null;
       if (mapping != null)
         msgs = ((InternalEObject) mapping).eInverseRemove(this,
-            EOPPOSITE_FEATURE_BASE - DiffdataPackage.ECOMPARISON__MAPPING,
-            null, msgs);
+            EOPPOSITE_FEATURE_BASE - DiffdataPackage.ECOMPARISON__MAPPING, null,
+            msgs);
       if (newMapping != null)
         msgs = ((InternalEObject) newMapping).eInverseAdd(this,
-            EOPPOSITE_FEATURE_BASE - DiffdataPackage.ECOMPARISON__MAPPING,
-            null, msgs);
+            EOPPOSITE_FEATURE_BASE - DiffdataPackage.ECOMPARISON__MAPPING, null,
+            msgs);
       msgs = basicSetMapping(newMapping, msgs);
       if (msgs != null)
         msgs.dispatch();
@@ -620,7 +617,7 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
     if (eIsProxy())
       return super.toString();
 
-    StringBuffer result = new StringBuffer(super.toString());
+    StringBuilder result = new StringBuilder(super.toString());
     result.append(" (ancestorScope: "); //$NON-NLS-1$
     result.append(ancestorScope);
     result.append(", referenceScope: "); //$NON-NLS-1$
@@ -663,12 +660,12 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
     SubMonitor subMonitor = SubMonitor.convert(nonNullMonitor,
         Messages.Comparison_Task_Main, 2);
     // Policies
-    setLastMatchPolicy(matchPolicy_p != null ? matchPolicy_p
-        : new DefaultMatchPolicy());
-    setLastDiffPolicy(diffPolicy_p != null ? diffPolicy_p
-        : new DefaultDiffPolicy());
-    setLastMergePolicy(mergePolicy_p != null ? mergePolicy_p
-        : new DefaultMergePolicy());
+    setLastMatchPolicy(
+        matchPolicy_p != null ? matchPolicy_p : new DefaultMatchPolicy());
+    setLastDiffPolicy(
+        diffPolicy_p != null ? diffPolicy_p : new DefaultDiffPolicy());
+    setLastMergePolicy(
+        mergePolicy_p != null ? mergePolicy_p : new DefaultMergePolicy());
     // Behavior
     IStatus result = computeMatch(getLastMatchPolicy(), subMonitor.newChild(1));
     if (result.isOK()) {
@@ -996,7 +993,7 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
     operation.run(monitor_p);
     return operation.getOutput();
   }
-  
+
   /**
    * @see org.eclipse.emf.diffmerge.api.IComparison.Editable#newAttributeValuePresence(org.eclipse.emf.diffmerge.api.IMatch, org.eclipse.emf.ecore.EAttribute, java.lang.Object, org.eclipse.emf.diffmerge.api.Role, boolean)
    * @generated NOT
@@ -1029,7 +1026,7 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
     return new EMatchImpl(targetElement_p, referenceElement_p,
         ancestorElement_p);
   }
-  
+
   /**
    * @see org.eclipse.emf.diffmerge.api.IComparison.Editable#newReferenceValuePresence(org.eclipse.emf.diffmerge.api.IMatch, org.eclipse.emf.ecore.EReference, org.eclipse.emf.ecore.EObject, org.eclipse.emf.diffmerge.api.IMatch, org.eclipse.emf.diffmerge.api.Role, boolean)
    * @generated NOT
@@ -1042,5 +1039,19 @@ public class EComparisonImpl extends EObjectImpl implements EComparison {
         presenceRole_p, isOrder_p);
     return result;
   }
-  
+
+  /**
+   * @see org.eclipse.emf.diffmerge.api.IComparison.Editable#swapScopes()
+   * @generated NOT
+   */
+  public boolean swapScopes() {
+    boolean isEmpty = getMapping().isEmpty();
+    if (isEmpty) {
+      IEditableModelScope formerTarget = targetScope;
+      targetScope = referenceScope;
+      referenceScope = formerTarget;
+    }
+    return isEmpty;
+  }
+
 } //EComparisonImpl

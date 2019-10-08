@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata.util;
 
 import java.util.Map;
@@ -93,6 +90,11 @@ public class DiffdataAdapterFactory extends AdapterFactoryImpl {
    * @generated
    */
   protected DiffdataSwitch<Adapter> modelSwitch = new DiffdataSwitch<Adapter>() {
+    @Override
+    public Adapter caseEIdentified(EIdentified object) {
+      return createEIdentifiedAdapter();
+    }
+
     @Override
     public Adapter caseEComparison(EComparison object) {
       return createEComparisonAdapter();
@@ -249,6 +251,20 @@ public class DiffdataAdapterFactory extends AdapterFactoryImpl {
   @Override
   public Adapter createAdapter(Notifier target) {
     return modelSwitch.doSwitch((EObject) target);
+  }
+
+  /**
+   * Creates a new adapter for an object of class '{@link org.eclipse.emf.diffmerge.diffdata.EIdentified <em>EIdentified</em>}'.
+   * <!-- begin-user-doc -->
+   * This default implementation returns null so that we can easily ignore cases;
+   * it's useful to ignore a case when inheritance will catch all the cases anyway.
+   * <!-- end-user-doc -->
+   * @return the new adapter.
+   * @see org.eclipse.emf.diffmerge.diffdata.EIdentified
+   * @generated
+   */
+  public Adapter createEIdentifiedAdapter() {
+    return null;
   }
 
   /**

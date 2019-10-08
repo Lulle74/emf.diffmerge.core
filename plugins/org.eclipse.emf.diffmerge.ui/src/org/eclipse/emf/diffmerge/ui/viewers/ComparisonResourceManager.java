@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.viewers;
 
 import java.util.HashMap;
@@ -19,14 +16,12 @@ import java.util.Map;
 
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin;
 import org.eclipse.emf.diffmerge.ui.EMFDiffMergeUIPlugin.ImageID;
-import org.eclipse.emf.diffmerge.ui.util.DifferenceKind;
 import org.eclipse.emf.edit.provider.IDisposable;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.DecorationOverlayIcon;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
-
 
 
 /**
@@ -94,21 +89,6 @@ public class ComparisonResourceManager implements IDisposable {
   }
   
   /**
-   * Return a variant of the given image that corresponds to the given difference kind
-   * @param image_p a potentially null image
-   * @param kind_p a potentially null difference kind
-   * @return a potentially null image
-   */
-  public Image adaptImage(Image image_p, DifferenceKind kind_p) {
-    Image result = image_p;
-    if (kind_p != null && image_p != null) {
-      ImageID overlay = EMFDiffMergeUIPlugin.getDefault().getDifferenceOverlay(kind_p);
-      result = getOverlayVersion(image_p, overlay);
-    }
-    return result;
-  }
-  
-  /**
    * Dispose the receiver
    */
   public void dispose() {
@@ -148,7 +128,8 @@ public class ComparisonResourceManager implements IDisposable {
       ImageOverlay io = new ImageOverlay(image_p, overlay_p);
       result = _normalToOverlay.get(io);
       if (result == null) {
-        ImageDescriptor overlayDescriptor = EMFDiffMergeUIPlugin.getDefault().getImageDescriptor(overlay_p);
+        ImageDescriptor overlayDescriptor =
+            EMFDiffMergeUIPlugin.getDefault().getImageDescriptor(overlay_p);
         DecorationOverlayIcon icon = new DecorationOverlayIcon(
             image_p, overlayDescriptor, IDecoration.BOTTOM_RIGHT);
         result = icon.createImage(image_p.getDevice());

@@ -1,9 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2015-2017 Intel Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2015-2019 Intel Corporation and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Stephane Bouchet (Intel Corporation) - initial API and implementation
@@ -21,10 +22,8 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.egit.core.internal.storage.IndexFileRevision;
 import org.eclipse.egit.ui.internal.revision.EditableRevision;
-import org.eclipse.egit.ui.internal.revision.LocalFileRevision;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.diffmerge.connector.core.ext.AbstractRevisionScopeDefinitionFactory;
-import org.eclipse.emf.diffmerge.connector.core.ext.LocalHistoryURIConverter;
 import org.eclipse.emf.diffmerge.connector.git.EMFDiffMergeGitConnectorPlugin;
 import org.eclipse.emf.diffmerge.connector.git.Messages;
 import org.eclipse.emf.ecore.resource.URIConverter;
@@ -56,24 +55,11 @@ public class GitIndexRevisionScopeDefinitionFactory extends AbstractRevisionScop
               Messages.GitIndexRevisionScopeDefinitionFactory_LabelIndexReadOnly,
               revision_p.getName());
         }
-      } else if (revision_p instanceof LocalFileRevision) {
-        result = String.format(
-            Messages.GitIndexRevisionScopeDefinitionFactory_LabelLocal,
-            getLocalFileRevisionPath((LocalFileRevision)revision_p));
       }
     }
     if (result == null)
       result = super.getLabelForRevision(revision_p, entrypoint_p);
     return result;
-  }
-  
-  /**
-   * Return the path of the given local file revision
-   * @param revision_p a non-null object
-   * @return a non-null object
-   */
-  protected String getLocalFileRevisionPath(LocalFileRevision revision_p) {
-    return revision_p.getFile().getFullPath().toString();
   }
   
   /**
@@ -111,14 +97,6 @@ public class GitIndexRevisionScopeDefinitionFactory extends AbstractRevisionScop
                 EMFDiffMergeGitConnectorPlugin.getDefault().getPluginId(), e.getMessage(), e));
       }
     }
-    if (revision_p instanceof LocalFileRevision) {
-      String fullPath = getLocalFileRevisionPath((LocalFileRevision)revision_p);
-      // Local history or current
-      final long timestamp = revision_p.getTimestamp();
-      if (timestamp != -1) {
-        return new LocalHistoryURIConverter(timestamp, fullPath);
-      }
-    }
     return null;
   }
   
@@ -133,7 +111,7 @@ public class GitIndexRevisionScopeDefinitionFactory extends AbstractRevisionScop
       try {
         conflicting = GitHelper.INSTANCE.isConflicting(revision_p);
         if (conflicting)
-          result = URI.createPlatformResourceURI(revision_p.getURI().toString(), true);
+          result = URI.createPlatformResourceURI(revision_p.getURI().toString(), false);
         else
           result = URI.createURI(
               GitHelper.INSTANCE.getSchemeIndex() + GitHelper.INSTANCE.getSchemeSeparator() +
@@ -142,8 +120,6 @@ public class GitIndexRevisionScopeDefinitionFactory extends AbstractRevisionScop
         EMFDiffMergeGitConnectorPlugin.getDefault().getLog().log(new Status(IStatus.ERROR,
             EMFDiffMergeGitConnectorPlugin.getDefault().getPluginId(), e.getMessage(), e));
       }
-    } else if (revision_p instanceof LocalFileRevision) {
-      result = URI.createPlatformResourceURI(getLocalFileRevisionPath((LocalFileRevision)revision_p), true);
     }
     return result;
   }

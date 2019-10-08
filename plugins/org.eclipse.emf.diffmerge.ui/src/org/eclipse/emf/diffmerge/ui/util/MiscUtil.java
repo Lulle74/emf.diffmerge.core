@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.util;
 
 import java.lang.reflect.InvocationTargetException;
@@ -31,6 +28,7 @@ import org.eclipse.emf.common.command.AbstractCommand.NonDirtying;
 import org.eclipse.emf.common.command.CommandStack;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.diffmerge.ui.Messages;
+import org.eclipse.emf.diffmerge.util.ModelsUtil;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.edit.command.ChangeCommand;
 import org.eclipse.emf.edit.domain.EditingDomain;
@@ -172,13 +170,69 @@ public final class MiscUtil {
   
   
   /**
+   * A stateless object that is in charge of disposing of resources taking various concerns
+   * into account.
+   */
+  public static class ExtendedUnloader extends ModelsUtil.Unloader {
+    /** The default instance: singleton with default behavior */
+    private static ExtendedUnloader __default = null;
+    /**
+     * Return the singleton with default behavior
+     * @return a non-null object
+     */
+    public static ExtendedUnloader getDefault() {
+      if (__default == null) {
+        __default = new ExtendedUnloader();
+      }
+      return __default;
+    }
+    /**
+     * Constructor
+     */
+    protected ExtendedUnloader() {
+      // Stateless
+    }
+    /**
+     * Disconnect the given resources from the given editing domain according to
+     * transactional/workspace concerns.
+     * Transactional concerns: handled.
+     * @param domain_p a potentially null editing domain
+     * @param resources_p a non-null set
+     * @return whether the operation succeeded for all resources
+     */
+    public boolean disconnectResources(
+        EditingDomain domain_p, Iterable<? extends Resource> resources_p) {
+      boolean result = true;
+      for (Resource resource : resources_p) {
+        boolean success = disconnectResource(domain_p, resource);
+        result = result && success;
+      }
+      return result;
+    }
+    /**
+     * Disconnect the given resource from the given editing domain according to
+     * transactional/workspace concerns.
+     * Transactional concerns: handled.
+     * @param domain_p a potentially null editing domain
+     * @param resource_p a potentially null resource
+     * @return whether the operation succeeded
+     */
+    public boolean disconnectResource(EditingDomain domain_p, Resource resource_p) {
+      //We need a platform independent solution here. 
+      return true; 
+    }
+  }
+  
+  
+  /**
    * Return the concatenation of the String representation of the given objects
    */
   public static String buildString(Object... objects_p) {
     StringBuilder builder = new StringBuilder();
     for (Object object : objects_p) {
-      if (null != object)
+      if (null != object) {
         builder.append(object);
+      }
     }
     return builder.toString();
   }
@@ -193,10 +247,11 @@ public final class MiscUtil {
    */
   public static void execute(EditingDomain domain_p, String label_p,
       final Runnable runnable_p, boolean recordChanges_p) {
-    if (recordChanges_p && domain_p != null)
+    if (recordChanges_p && domain_p != null) {
       executeOnDomain(domain_p, label_p, runnable_p);
-    else
+    } else {
       executeAndForget(domain_p, runnable_p);
+    }
   }
   
   /**
@@ -276,8 +331,9 @@ public final class MiscUtil {
         MiscUtil.execute(domain_p, label_p, runnable_p, recordChanges_p);
       }
     };
-    if (MiscUtil.isRunningInActiveTransaction(domain_p))
+    if (MiscUtil.isRunningInActiveTransaction(domain_p)) {
       actualOperation = ((TransactionalEditingDomain)domain_p).createPrivilegedRunnable(actualOperation);
+    }
     BusyIndicator.showWhile(display_p, actualOperation);
   }
   
@@ -320,10 +376,12 @@ public final class MiscUtil {
           // Resource from external file
           IProject project = wk.getRoot().getProject("ExternalFiles"); //$NON-NLS-1$
           try {
-            if (!project.exists())
+            if (!project.exists()) {
               project.create(null);
-            if (!project.isOpen())
+            }
+            if (!project.isOpen()) {
               project.open(null);
+            }
             IPath path = new Path(uri.toFileString());
             result = project.getFile(path.lastSegment());
             result.createLink(path, IResource.NONE, null);
@@ -346,8 +404,9 @@ public final class MiscUtil {
     if (domain_p instanceof InternalTransactionalEditingDomain) {
       Transaction activeTransaction =
           ((InternalTransactionalEditingDomain)domain_p).getActiveTransaction();
-      if (activeTransaction != null)
+      if (activeTransaction != null) {
         result = Thread.currentThread() == activeTransaction.getOwner();
+      }
     }
     return result;
   }

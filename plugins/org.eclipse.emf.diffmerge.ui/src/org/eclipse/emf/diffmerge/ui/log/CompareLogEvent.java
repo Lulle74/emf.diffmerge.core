@@ -1,27 +1,25 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.log;
 
 import static org.eclipse.emf.diffmerge.ui.log.DiffMergeLogger.LINE_SEP;
 
 import java.util.Date;
 
-import org.eclipse.emf.diffmerge.api.IComparison;
 import org.eclipse.emf.diffmerge.api.Role;
+import org.eclipse.emf.diffmerge.api.scopes.IFeaturedModelScope;
 import org.eclipse.emf.diffmerge.ui.Messages;
 import org.eclipse.emf.diffmerge.ui.util.DiffMergeLabelProvider;
+import org.eclipse.emf.diffmerge.ui.viewers.EMFDiffNode;
 import org.eclipse.emf.edit.domain.EditingDomain;
 
 
@@ -35,10 +33,10 @@ public class CompareLogEvent extends AbstractLogEvent {
   /**
    * Constructor
    * @param domain_p an optional editing domain
-   * @param comparison_p a non-null comparison
+   * @param node_p a non-null diff node
    */
-  public CompareLogEvent(EditingDomain domain_p, IComparison comparison_p) {
-    super(comparison_p);
+  public CompareLogEvent(EditingDomain domain_p, EMFDiffNode node_p) {
+    super(node_p);
   }
   
   /**
@@ -46,8 +44,7 @@ public class CompareLogEvent extends AbstractLogEvent {
    * @return a non-null string
    */
   public String getLeftLabel() {
-    return DiffMergeLabelProvider.getInstance().getText(
-        getComparison().getScope(Role.TARGET));
+    return getSideLabel(true);
   }
   
   /**
@@ -55,8 +52,7 @@ public class CompareLogEvent extends AbstractLogEvent {
    * @return a non-null string
    */
   public String getRightLabel() {
-    return DiffMergeLabelProvider.getInstance().getText(
-        getComparison().getScope(Role.REFERENCE));
+    return getSideLabel(false);
   }
   
   /**
@@ -80,6 +76,18 @@ public class CompareLogEvent extends AbstractLogEvent {
     builder.append(getRightLabel());
     builder.append(LINE_SEP);
     return builder.toString();
+  }
+  
+  /**
+   * Return the label describing the given side
+   * @param left_p whether the side is left or right
+   * @return a non-null string
+   */
+  protected String getSideLabel(boolean left_p) {
+    EMFDiffNode node = getDiffNode();
+    Role sideRole = node.getRoleForSide(left_p);
+    IFeaturedModelScope sideScope = node.getActualComparison().getScope(sideRole);
+    return DiffMergeLabelProvider.getInstance().getText(sideScope);
   }
   
 }

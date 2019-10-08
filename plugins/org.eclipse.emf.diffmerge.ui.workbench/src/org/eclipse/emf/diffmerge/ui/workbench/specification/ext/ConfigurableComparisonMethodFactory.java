@@ -1,17 +1,15 @@
-/**
- * <copyright>
+
+/*********************************************************************
+ * Copyright (c) 2013-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  * 
- * Copyright (c) 2013-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.ui.workbench.specification.ext;
 
 import java.util.Collection;
@@ -34,8 +32,7 @@ import org.eclipse.ui.PlatformUI;
  * A contribution to the Diff/Merge UI extension point.
  * @author Olivier Constant
  */
-public class ConfigurableComparisonMethodFactory extends DefaultComparisonMethodFactory
-{
+public class ConfigurableComparisonMethodFactory extends DefaultComparisonMethodFactory {
 
 	/**
 	 * @see org.eclipse.emf.diffmerge.ui.specification.ext.DefaultComparisonMethodFactory#createComparisonMethod(org.eclipse.emf.diffmerge.ui.specification.IModelScopeDefinition, org.eclipse.emf.diffmerge.ui.specification.IModelScopeDefinition, org.eclipse.emf.diffmerge.ui.specification.IModelScopeDefinition)
@@ -85,8 +82,7 @@ public class ConfigurableComparisonMethodFactory extends DefaultComparisonMethod
 	 * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethodFactory#getLabel()
 	 */
 	@Override
-	public String getLabel()
-	{
+  public String getLabel() {
 		return Messages.ConfigurableComparisonMethodFactory_Label;
 	}
 
@@ -94,8 +90,7 @@ public class ConfigurableComparisonMethodFactory extends DefaultComparisonMethod
 	 * @see org.eclipse.emf.diffmerge.ui.specification.IComparisonMethodFactory#getOverridenClasses()
 	 */
 	@Override
-	public Collection<Class<?>> getOverridenClasses()
-	{
+  public Collection<Class<?>> getOverridenClasses() {
 		return Collections.<Class<?>> emptySet();
 	}
 

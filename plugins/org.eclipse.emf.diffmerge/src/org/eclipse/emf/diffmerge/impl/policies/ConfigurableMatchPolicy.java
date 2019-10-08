@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2013-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2013-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.impl.policies;
 
 import java.util.ArrayList;
@@ -296,6 +293,54 @@ implements IConfigurablePolicy {
   }
   
   /**
+   * Return the contents of the given container element
+   * @param container_p a potentially null element
+   * @param scope_p a non-null scope that covers container_p
+   * @return a non-null, potentially empty, unmodifiable list
+   */
+  protected List<EObject> getContents(EObject container_p, IModelScope scope_p) {
+    List<EObject> result;
+    if (isScopeOnly()) {
+      result = scope_p.getContents(container_p);
+    } else {
+      List<EObject> rawContents = container_p.eContents();
+      result = Collections.unmodifiableList(rawContents);
+    }
+    return result;
+  }
+  
+  /**
+   * Return the contents of the given container element through the given
+   * containment reference
+   * @param container_p a potentially null element
+   * @param containment_p a non-null reference
+   * @param scope_p a non-null scope that covers container_p
+   * @return a non-null, potentially empty, unmodifiable list
+   */
+  @SuppressWarnings("unchecked")
+  protected List<EObject> getContents(EObject container_p,
+      EReference containment_p, IModelScope scope_p) {
+    List<EObject> result;
+    if (isScopeOnly()) {
+      if (scope_p instanceof IFeaturedModelScope) {
+        result = ((IFeaturedModelScope)scope_p).get(container_p, containment_p);
+      } else {
+        result = Collections.emptyList();
+      }
+    } else {
+      Object rawContents = container_p.eGet(containment_p);
+      if (rawContents instanceof List<?>) {
+        result = Collections.unmodifiableList((List<EObject>)rawContents);
+      } else if (rawContents instanceof EObject) {
+        result = Collections.singletonList((EObject)rawContents);
+      } else {
+        result = Collections.emptyList();
+      }
+    }
+    return result;
+  }
+  
+  /**
    * Return the set of match criteria that are used by default
    * @return a non-null collection
    */
@@ -455,22 +500,21 @@ implements IConfigurablePolicy {
    * as roots of the same scope/resource otherwise.
    * @param element_p a non-null element
    * @param scope_p a non-null scope that covers element_p
-   * @return a non-null, potentially empty, unmodifiable collection
+   * @return a non-null, potentially empty, unmodifiable collection that contains element_p
    */
   protected List<EObject> getSiblings(EObject element_p, IModelScope scope_p) {
     List<EObject> result;
     EReference containment = getContainment(element_p, scope_p);
     if (containment == null) {
       Resource resource = element_p.eResource();
-      if (isScopeOnly() || resource == null)
+      if (isScopeOnly() || resource == null) {
         result = scope_p.getContents();
-      else
+      } else {
         result = resource.getContents();
-    } else if (scope_p instanceof IFeaturedModelScope) {
-      EObject container = getContainer(element_p, scope_p);
-      result = ((IFeaturedModelScope)scope_p).get(container, containment);
+      }
     } else {
-      result = Collections.emptyList();
+      EObject container = getContainer(element_p, scope_p);
+      result = getContents(container, containment, scope_p);
     }
     return Collections.unmodifiableList(result);
   }

@@ -1,9 +1,10 @@
 /**
- * Copyright (c) 2015-2017 Intel Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2015-2019 Intel Corporation and others.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Stephane Bouchet (Intel Corporation) - initial API and implementation
@@ -50,7 +51,7 @@ implements ITimestampProvider {
    */
 	public LocalHistoryURIConverter(long timestamp_p, String basePath_p) {
     _timestamp = timestamp_p;
-    _basePath = basePath_p;
+    _basePath = URI.decode(basePath_p);
 	}
 	
 	/**
@@ -62,7 +63,7 @@ implements ITimestampProvider {
     if (uri_p.isPlatform()) {
       fullPath = new Path(uri_p.toPlatformString(true));
     } else {
-      fullPath = new Path(_basePath).append(uri_p.toString());
+      fullPath = new Path(_basePath).append(URI.decode(uri_p.toString()));
     }
     IFile targetFile = ResourcesPlugin.getWorkspace().getRoot().getFile(fullPath);
     if (targetFile != null && targetFile.exists()) {

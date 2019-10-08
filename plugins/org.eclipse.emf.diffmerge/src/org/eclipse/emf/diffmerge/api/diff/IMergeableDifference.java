@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.api.diff;
 
 import java.util.Collection;
@@ -82,7 +79,8 @@ public interface IMergeableDifference extends IDifference {
    */
   interface Editable extends IMergeableDifference, IDifference.Editable {
     /**
-     * Core behavior for mergeIn(Role, IMergePolicy) ignoring dependencies
+     * Core behavior for mergeTo(Role) independently of the current state
+     * of the difference (related differences, merge status, etc.)
      * @param destination_p a non-null destination role
      */
     void doMergeIn(Role destination_p);

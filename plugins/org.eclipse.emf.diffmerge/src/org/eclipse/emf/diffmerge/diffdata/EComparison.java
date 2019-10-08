@@ -1,17 +1,14 @@
-/**
- * <copyright>
- * 
- * Copyright (c) 2010-2017 Thales Global Services S.A.S.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*********************************************************************
+ * Copyright (c) 2010-2019 Thales Global Services S.A.S.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
  *    Thales Global Services S.A.S. - initial API and implementation
- * 
- * </copyright>
- */
+ **********************************************************************/
 package org.eclipse.emf.diffmerge.diffdata;
 
 import org.eclipse.emf.diffmerge.api.IComparison.Editable;
@@ -19,7 +16,6 @@ import org.eclipse.emf.diffmerge.api.IDiffPolicy;
 import org.eclipse.emf.diffmerge.api.IMatchPolicy;
 import org.eclipse.emf.diffmerge.api.IMergePolicy;
 import org.eclipse.emf.diffmerge.api.scopes.IEditableModelScope;
-import org.eclipse.emf.ecore.EObject;
 
 /**
  * <!-- begin-user-doc -->
@@ -28,6 +24,7 @@ import org.eclipse.emf.ecore.EObject;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EComparison#getAncestorScope <em>Ancestor Scope</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EComparison#getReferenceScope <em>Reference Scope</em>}</li>
@@ -37,13 +34,12 @@ import org.eclipse.emf.ecore.EObject;
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EComparison#getLastMergePolicy <em>Last Merge Policy</em>}</li>
  *   <li>{@link org.eclipse.emf.diffmerge.diffdata.EComparison#getMapping <em>Mapping</em>}</li>
  * </ul>
- * </p>
  *
  * @see org.eclipse.emf.diffmerge.diffdata.DiffdataPackage#getEComparison()
- * @model superTypes="org.eclipse.emf.diffmerge.diffdata.IEditableComparison"
+ * @model superTypes="org.eclipse.emf.diffmerge.diffdata.EIdentified org.eclipse.emf.diffmerge.diffdata.IEditableComparison"
  * @generated
  */
-public interface EComparison extends EObject, Editable {
+public interface EComparison extends EIdentified, Editable {
   /**
    * Returns the value of the '<em><b>Ancestor Scope</b></em>' attribute.
    * <!-- begin-user-doc -->
